@@ -38,31 +38,40 @@ protected:
             auto data = new int(GenerateRangeRandomNum(MIN_DATA, MAX_DATA));
             data_.push_back(data);
             int key = keys_[i];
-            EXPECT_FALSE(t0_->HasKey(key));
-            t0_->insert(key, data);
             backup_[key] = data;
-        }
-
-        for (int i = 0; i < num; i++) {
-            EXPECT_TRUE(t0_->HasKey(keys_[i]));
         }
 
         for (int i = 0; i < num;) {
             int key = keys_[i];
-            EXPECT_TRUE(t0_->HasKey(key));
-            t0_->remove(key);
-//            EXPECT_FALSE(backup_.find(key) == backup_.end());
-            const std::map<int, int *>::iterator p = backup_.find(key);
-            backup_.erase(p);
-//            EXPECT_TRUE(backup_.find(key) == backup_.end());
+            backup_.erase(backup_.find(key));
             i += 1 + std::rand() % (num / 10);
         }
+
+        struct timeval st_time, ed_time;
+        char res[20];
+        gettimeofday(&st_time, NULL);
+
+        for (int i = 0; i < keys_.size(); i++) {
+            t0_->insert(keys_[i], data_[i]);
+        }
+
+        for (auto removed_key: removed_keys_) {
+            t0_->remove(removed_key);
+        }
+
+        gettimeofday(&ed_time, NULL);
+
+        output_time_spend(st_time, ed_time, res);
+
+        printf("key num: %d, max child num: %d, %ld insert operations and %ld remove operations speed time: %s\n",
+               num, order, keys_.size(), removed_keys_.size(), res);
+
     }
 
     void Clean() {
         keys_.clear();
         backup_.clear();
-        for(int* item: data_){
+        for (int *item: data_) {
             delete item;
         }
         data_.clear();
@@ -105,6 +114,8 @@ protected:
 
     std::vector<int> keys_;
 
+    std::vector<int> removed_keys_;
+
     std::vector<int *> data_;
 
     std::map<int, int *> backup_;
@@ -113,17 +124,12 @@ protected:
 };
 
 TEST_F(BPTreeMoreDataFixture, Random) {
-    int data_size[] = {10, 100, 1000, 10000, 100000, 1000000};
+    int data_size[] = {10, 1000, 10000, 100000, 1000000};
     int order[] = {5, 10, 20, 40, 100};
-    struct timeval st_time, ed_time;
-    char res[20];
+
     for (int num : data_size) {
         for (int order_ : order) {
-            gettimeofday(&st_time, NULL);
             Initialize(num, order_);
-            gettimeofday(&ed_time, NULL);
-            output_time_spend(st_time, ed_time, res);
-            printf("key num: %d, max child num: %d, speed time: %s\n", num, order_, res);
             int key, *data;
             bool exist;
             for (int k = 0; k < num / 10; k++) {

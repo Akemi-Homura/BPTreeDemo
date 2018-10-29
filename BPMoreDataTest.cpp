@@ -76,7 +76,7 @@ protected:
         output_time_spend(exist_test_st_time, exist_test_ed_time, res_exist_test);
 
         printf("key num: %d, max child num: %d, %ld insert operations spend %s and %ld remove operations speed %s "
-                       "and %ld exist test operations spend %s",
+                       "and %ld exist test operations spend %s\n",
                num, order, keys_.size(), res_insert,removed_keys_.size(), res_remove, keys_.size(), res_exist_test);
 
     }

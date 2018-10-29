@@ -43,6 +43,7 @@ protected:
 
         for (int i = 0; i < num;) {
             int key = keys_[i];
+            removed_keys_.push_back(key);
             backup_.erase(backup_.find(key));
             i += 1 + std::rand() % (num / 10);
         }

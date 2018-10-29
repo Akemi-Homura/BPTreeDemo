@@ -45,27 +45,28 @@ protected:
             int key = keys_[i];
             removed_keys_.push_back(key);
             backup_.erase(backup_.find(key));
-            i += 1 + std::rand() % (num / 10);
+            i += 1 + std::rand() % 100;
         }
 
-        struct timeval st_time, ed_time;
-        char res[20];
-        gettimeofday(&st_time, NULL);
+        struct timeval insert_st_time, insert_ed_time,rm_st_time,rm_ed_time;
+        char res_insert[20], res_remove[20];
+        gettimeofday(&insert_st_time, NULL);
 
         for (int i = 0; i < keys_.size(); i++) {
             t0_->insert(keys_[i], data_[i]);
         }
+        gettimeofday(&insert_ed_time, NULL);
 
+        gettimeofday(&rm_st_time, NULL);
         for (auto removed_key: removed_keys_) {
             t0_->remove(removed_key);
         }
+        gettimeofday(&rm_ed_time, NULL);
 
-        gettimeofday(&ed_time, NULL);
+        output_time_spend(insert_st_time, insert_ed_time, res_insert);
+        output_time_spend(rm_st_time, rm_ed_time, res_remove);
 
-        output_time_spend(st_time, ed_time, res);
-
-        printf("key num: %d, max child num: %d, %ld insert operations and %ld remove operations speed time: %s\n",
-               num, order, keys_.size(), removed_keys_.size(), res);
+        printf("key num: %d, max child num: %d, %ld insert operations spend %s and %ld remove operations speed %s\n",num, order, keys_.size(), res_insert,removed_keys_.size(), res_remove);
 
     }
 

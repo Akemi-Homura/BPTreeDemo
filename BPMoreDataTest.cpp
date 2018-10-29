@@ -48,8 +48,10 @@ protected:
             i += 1 + std::rand() % 100;
         }
 
-        struct timeval insert_st_time, insert_ed_time,rm_st_time,rm_ed_time;
-        char res_insert[20], res_remove[20];
+
+        struct timeval insert_st_time, insert_ed_time,rm_st_time,rm_ed_time
+                        ,exist_test_st_time, exist_test_ed_time;
+        char res_insert[20], res_remove[20], res_exist_test[20];
         gettimeofday(&insert_st_time, NULL);
 
         for (int i = 0; i < keys_.size(); i++) {
@@ -63,10 +65,19 @@ protected:
         }
         gettimeofday(&rm_ed_time, NULL);
 
+        gettimeofday(&exist_test_st_time, NULL);
+        for (int i = 0; i < keys_.size(); i++) {
+            t0_->HasKey(keys_[i]);
+        }
+        gettimeofday(&exist_test_ed_time, NULL);
+
         output_time_spend(insert_st_time, insert_ed_time, res_insert);
         output_time_spend(rm_st_time, rm_ed_time, res_remove);
+        output_time_spend(exist_test_st_time, exist_test_ed_time, res_exist_test);
 
-        printf("key num: %d, max child num: %d, %ld insert operations spend %s and %ld remove operations speed %s\n",num, order, keys_.size(), res_insert,removed_keys_.size(), res_remove);
+        printf("key num: %d, max child num: %d, %ld insert operations spend %s and %ld remove operations speed %s "
+                       "and %ld exist test operations spend %s",
+               num, order, keys_.size(), res_insert,removed_keys_.size(), res_remove, keys_.size(), res_exist_test);
 
     }
 

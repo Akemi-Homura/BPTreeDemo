@@ -76,7 +76,7 @@ protected:
             delete item;
         }
         data_.clear();
-
+        removed_keys_.clear();
         delete t0_;
     }
 

@@ -179,7 +179,7 @@ bool BPTree<T, E>::BorrowFromSibling(BPNode<T> *node, BPNode<T> *sibling, int ol
             node_entries.insert(node_entries.begin(), sibling_entries.back());
             sibling_entries.pop_back();
             UpdateParent(sibling, sibling_entries.back().first, node_entries.front().first);
-            ((BPNode<T>*)sibling_entries.front().second)->SetParent(node);
+            ((BPNode<T>*)node_entries.front().second)->SetParent(node);
         } else {
             node_entries.push_back(sibling_entries.front());
             sibling_entries.erase(sibling_entries.begin());

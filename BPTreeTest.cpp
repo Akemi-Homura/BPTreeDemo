@@ -363,6 +363,12 @@ TEST_F(BPTreeFixture, Remove2){
     EXPECT_EQ(2,root->KeySize());
     EXPECT_EQ(13, root->entries()[0].first);
     EXPECT_EQ(15, root->entries()[1].first);
+
+    t0_->remove(13);
+    EXPECT_EQ(kLeaf, root->type());
+    EXPECT_EQ(nullptr, root->parent());
+    EXPECT_EQ(1,root->KeySize());
+    EXPECT_EQ(15, root->entries()[0].first);
 }
 
 //TEST_F(BPTreeFixture, Insert) {

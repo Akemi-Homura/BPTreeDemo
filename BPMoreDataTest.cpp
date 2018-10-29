@@ -62,9 +62,9 @@ protected:
     void Clean() {
         keys_.clear();
         backup_.clear();
-//        for(int* item: data_){
-//            delete item;
-//        }
+        for(int* item: data_){
+            delete item;
+        }
         data_.clear();
 
         delete t0_;

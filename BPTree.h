@@ -43,7 +43,7 @@ private:
 
     void release_node(BPNode<T> *node);
 
-    bool merge(BPNode<T> *left, BPNode<T> *right);
+    bool merge(BPNode<T> *left, BPNode<T> *right, int removed_key);
 
     BPNode<T> *FindLeaf(T key);
 
@@ -192,7 +192,7 @@ bool BPTree<T, E>::BorrowFromSibling(BPNode<T> *node, BPNode<T> *sibling, int ol
 }
 
 template<typename T, typename E>
-bool BPTree<T, E>::merge(BPNode<T> *left, BPNode<T> *right) {
+bool BPTree<T, E>::merge(BPNode<T> *left, BPNode<T> *right, int removed_key) {
     if (left == nullptr || right == nullptr) return false;
     if (left->parent() != right->parent()) return false;
 
@@ -213,7 +213,7 @@ bool BPTree<T, E>::merge(BPNode<T> *left, BPNode<T> *right) {
         RemoveNode(right->parent());
         right->SetParent(nullptr);
     } else {
-        RemoveEntry(right->parent(), left_entries.back().first);
+        RemoveEntry(right->parent(), left_entries.size() == 0?removed_key:left_entries.back().first);
     }
     RemoveNode(left);
     return true;
@@ -223,15 +223,16 @@ template<typename T, typename E>
 void BPTree<T, E>::RemoveEntry(BPNode<T> *node, T key) {
 
     node->Remove(key);
-    UpdateParent(node, node->entries().back().first, key);
+    if(node->KeySize()) UpdateParent(node, node->entries().back().first, key);
 
     if(node->type() == kLeaf && node == root_)return;
     if (node->IsHalfFull())return;
     if (BorrowFromSibling(node, node->pre(), key, true)) return;
     if (BorrowFromSibling(node, node->next(), node->KeySize()==0?key:node->entries().back().first, false)) return;
-    if (merge(node->pre(), node)) return;
-    if (merge(node, node->next())) return;
-    RemoveKeyFailed<T>(key);
+    if (merge(node->pre(), node, key)) return;
+    if (merge(node, node->next(), key)) return;
+    RemoveEntry(node->parent(), key);
+    RemoveNode(node);
 }
 
 template<typename T, typename E>

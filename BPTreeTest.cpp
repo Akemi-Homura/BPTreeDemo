@@ -11,11 +11,16 @@ protected:
     virtual void SetUp() {
         t0_ = new BPTree<int, int *>(4);
         t1_ = new BPTree<int, std::string *>(5);
-        
+        t2_ = new BPTree<int, int *>(3);
+
 
         for (int i = 0; i < 10; i++) {
             val[i] = new int(num[i]);
             t0_->insert(key[i], val[i]);
+        }
+
+        for (int i = 0; i < 9; i++) {
+            t2_->insert(key[i], val[i]);
         }
     }
 
@@ -25,6 +30,7 @@ protected:
 
     BPTree<int, int *> *t0_;
     BPTree<int, std::string *> *t1_;
+    BPTree<int, int *> *t2_;
 };
 
 TEST_F(BPTreeFixture, Constrantor) {
@@ -37,11 +43,12 @@ TEST_F(BPTreeFixture, Constrantor) {
 TEST_F(BPTreeFixture, Destructor) {
     delete t1_;
     delete t0_;
+    delete t2_;
 }
 
-TEST_F(BPTreeFixture, Insert){
+TEST_F(BPTreeFixture, Insert) {
     auto root = t0_->root();
-    EXPECT_EQ(kInternal,root->type());
+    EXPECT_EQ(kInternal, root->type());
     EXPECT_EQ(2, root->KeySize());
     EXPECT_EQ(5, root->entries().front().first);
     EXPECT_EQ(15, root->entries()[1].first);
@@ -114,35 +121,35 @@ TEST_F(BPTreeFixture, Insert){
     EXPECT_EQ(9, node3_4->entries()[0].first);
     EXPECT_EQ(11, node3_4->entries()[1].first);
 
-    EXPECT_EQ(2,node3_5->KeySize());
+    EXPECT_EQ(2, node3_5->KeySize());
     EXPECT_EQ(13, node3_5->entries()[0].first);
     EXPECT_EQ(15, node3_5->entries()[1].first);
 }
 
-TEST_F(BPTreeFixture, HasKey){
-    for(int i=0;i<10;i++){
+TEST_F(BPTreeFixture, HasKey) {
+    for (int i = 0; i < 10; i++) {
         EXPECT_TRUE(t0_->HasKey(key[i]));
     }
-    for(int i=0;i<10000;i++){
+    for (int i = 0; i < 10000; i++) {
         bool flag = false;
-        for(int j=0;j<10;j++){
-            if(key[j] == i){
+        for (int j = 0; j < 10; j++) {
+            if (key[j] == i) {
                 flag = true;
                 break;
             }
         }
-        if(flag)continue;
+        if (flag)continue;
         EXPECT_FALSE(t0_->HasKey(i));
     }
 }
 
-TEST_F(BPTreeFixture, FindData){
-    for(int i=0;i<10;i++){
-        EXPECT_EQ(*val[i], *(int*)t0_->FindData(key[i]));
+TEST_F(BPTreeFixture, FindData) {
+    for (int i = 0; i < 10; i++) {
+        EXPECT_EQ(*val[i], *(int *) t0_->FindData(key[i]));
     }
 }
 
-TEST_F(BPTreeFixture, Remove){
+TEST_F(BPTreeFixture, Remove) {
     t0_->remove(11);
     auto root = t0_->root();
     EXPECT_EQ(2, root->KeySize());
@@ -212,14 +219,14 @@ TEST_F(BPTreeFixture, Remove){
     EXPECT_EQ(13, node3_4->entries()[0].first);
     EXPECT_EQ(15, node3_4->entries()[1].first);
 
-    t0_ = new BPTree<int,int*>(4);
-    for(int i=0;i<4;i++){
-        t0_->insert(key[i],val[i]);
+    t0_ = new BPTree<int, int *>(4);
+    for (int i = 0; i < 4; i++) {
+        t0_->insert(key[i], val[i]);
     }
     root = t0_->root();
     node2_1 = (BPNode<int> *) root->entries().front().second;
     node2_2 = (BPNode<int> *) root->entries()[1].second;
-    EXPECT_EQ(2,root->KeySize());
+    EXPECT_EQ(2, root->KeySize());
     EXPECT_EQ(2, root->entries()[0].first);
     EXPECT_EQ(5, root->entries()[1].first);
 
@@ -260,18 +267,18 @@ TEST_F(BPTreeFixture, Remove){
     EXPECT_EQ(nullptr, root->next());
 }
 
-TEST_F(BPTreeFixture, RemoveAll){
-    for(int i=0;i<10;i++){
+TEST_F(BPTreeFixture, RemoveAll) {
+    for (int i = 0; i < 10; i++) {
         t0_->remove(key[i]);
     }
 }
 
-TEST_F(BPTreeFixture, Remove2){
+TEST_F(BPTreeFixture, Remove2) {
     t0_->remove(1);
     auto root = t0_->root();
-    auto node2_1 = (BPNode<int>*)root->entries()[0].second;
-    auto node3_1 = (BPNode<int>*)node2_1->entries()[0].second;
-    auto node3_2 = (BPNode<int>*)node2_1->entries()[1].second;
+    auto node2_1 = (BPNode<int> *) root->entries()[0].second;
+    auto node3_1 = (BPNode<int> *) node2_1->entries()[0].second;
+    auto node3_2 = (BPNode<int> *) node2_1->entries()[1].second;
 
     EXPECT_EQ(8, root->entries()[0].first);
     EXPECT_EQ(5, node2_1->entries()[0].first);
@@ -283,8 +290,8 @@ TEST_F(BPTreeFixture, Remove2){
     EXPECT_EQ(5, node3_1->entries()[2].first);
 
     EXPECT_EQ(2, node3_2->KeySize());
-    EXPECT_EQ(6,node3_2->entries()[0].first);
-    EXPECT_EQ(8,node3_2->entries()[1].first);
+    EXPECT_EQ(6, node3_2->entries()[0].first);
+    EXPECT_EQ(8, node3_2->entries()[1].first);
 
     EXPECT_EQ(node2_1, node3_2->parent());
 
@@ -295,9 +302,9 @@ TEST_F(BPTreeFixture, Remove2){
 
     t0_->remove(3);
     root = t0_->root();
-    node2_1 = (BPNode<int>*)root->entries()[0].second;
-    auto node2_2 = (BPNode<int>*)root->entries()[1].second;
-    auto node2_3 = (BPNode<int>*)root->entries()[2].second;
+    node2_1 = (BPNode<int> *) root->entries()[0].second;
+    auto node2_2 = (BPNode<int> *) root->entries()[1].second;
+    auto node2_3 = (BPNode<int> *) root->entries()[2].second;
 
     EXPECT_EQ(root, node2_1->parent());
     EXPECT_EQ(root, node2_2->parent());
@@ -328,8 +335,8 @@ TEST_F(BPTreeFixture, Remove2){
     EXPECT_EQ(8, node2_1->entries()[1].first);
 
     t0_->remove(6);
-    node2_1 = (BPNode<int>*)root->entries()[0].second;
-    node2_2 = (BPNode<int>*)root->entries()[1].second;
+    node2_1 = (BPNode<int> *) root->entries()[0].second;
+    node2_2 = (BPNode<int> *) root->entries()[1].second;
     EXPECT_EQ(2, root->KeySize());
     EXPECT_EQ(11, root->entries()[0].first);
     EXPECT_EQ(15, root->entries()[1].first);
@@ -352,7 +359,7 @@ TEST_F(BPTreeFixture, Remove2){
     root = t0_->root();
     EXPECT_EQ(kLeaf, root->type());
     EXPECT_EQ(nullptr, root->parent());
-    EXPECT_EQ(3,root->KeySize());
+    EXPECT_EQ(3, root->KeySize());
     EXPECT_EQ(11, root->entries()[0].first);
     EXPECT_EQ(13, root->entries()[1].first);
     EXPECT_EQ(15, root->entries()[2].first);
@@ -360,15 +367,161 @@ TEST_F(BPTreeFixture, Remove2){
     t0_->remove(11);
     EXPECT_EQ(kLeaf, root->type());
     EXPECT_EQ(nullptr, root->parent());
-    EXPECT_EQ(2,root->KeySize());
+    EXPECT_EQ(2, root->KeySize());
     EXPECT_EQ(13, root->entries()[0].first);
     EXPECT_EQ(15, root->entries()[1].first);
 
     t0_->remove(13);
     EXPECT_EQ(kLeaf, root->type());
     EXPECT_EQ(nullptr, root->parent());
-    EXPECT_EQ(1,root->KeySize());
+    EXPECT_EQ(1, root->KeySize());
     EXPECT_EQ(15, root->entries()[0].first);
+}
+
+
+TEST_F(BPTreeFixture, SmallOrder) {
+    auto root = t2_->root();
+    auto node2_1 = (BPNode<int> *) root->entries()[0].second;
+    auto node2_2 = (BPNode<int> *) root->entries()[1].second;
+    auto node3_1 = (BPNode<int> *) node2_1->entries()[0].second;
+    auto node3_2 = (BPNode<int> *) node2_1->entries()[1].second;
+    auto node3_3 = (BPNode<int> *) node2_2->entries()[0].second;
+    auto node4_1 = (BPNode<int> *) node3_1->entries()[0].second;
+    auto node4_2 = (BPNode<int> *) node3_1->entries()[1].second;
+    auto node4_3 = (BPNode<int> *) node3_2->entries()[0].second;
+    auto node4_4 = (BPNode<int> *) node3_2->entries()[1].second;
+    auto node4_5 = (BPNode<int> *) node3_3->entries()[0].second;
+
+    EXPECT_EQ(kInternal, root->type());
+    EXPECT_EQ(kInternal, node2_1->type());
+    EXPECT_EQ(kInternal, node2_2->type());
+    EXPECT_EQ(kInternal, node3_1->type());
+    EXPECT_EQ(kInternal, node3_2->type());
+    EXPECT_EQ(kInternal, node3_3->type());
+    EXPECT_EQ(kLeaf, node4_1->type());
+    EXPECT_EQ(kLeaf, node4_2->type());
+    EXPECT_EQ(kLeaf, node4_3->type());
+    EXPECT_EQ(kLeaf, node4_4->type());
+    EXPECT_EQ(kLeaf, node4_5->type());
+
+    EXPECT_EQ(nullptr, root->parent());
+    EXPECT_EQ(root, node2_1->parent());
+    EXPECT_EQ(root, node2_2->parent());
+    EXPECT_EQ(node2_1, node3_1->parent());
+    EXPECT_EQ(node2_1, node3_2->parent());
+    EXPECT_EQ(node2_2, node3_3->parent());
+    EXPECT_EQ(node3_1, node4_1->parent());
+    EXPECT_EQ(node3_1, node4_2->parent());
+    EXPECT_EQ(node3_2, node4_3->parent());
+    EXPECT_EQ(node3_2, node4_4->parent());
+    EXPECT_EQ(node3_3, node4_5->parent());
+
+    EXPECT_EQ(nullptr, root->pre());
+    EXPECT_EQ(nullptr, root->next());
+
+    EXPECT_EQ(nullptr, node2_1->pre());
+    EXPECT_EQ(node2_2, node2_1->next());
+    EXPECT_EQ(node2_1, node2_2->pre());
+    EXPECT_EQ(nullptr, node2_2->next());
+
+    EXPECT_EQ(nullptr, node3_1->pre());
+    EXPECT_EQ(node3_2, node3_1->next());
+    EXPECT_EQ(node3_1, node3_2->pre());
+    EXPECT_EQ(node3_3, node3_2->next());
+    EXPECT_EQ(node3_2, node3_3->pre());
+    EXPECT_EQ(nullptr, node3_3->next());
+
+    EXPECT_EQ(nullptr, node4_1->pre());
+    EXPECT_EQ(node4_2, node4_1->next());
+    EXPECT_EQ(node4_1, node4_2->pre());
+    EXPECT_EQ(node4_3, node4_2->next());
+    EXPECT_EQ(node4_2, node4_3->pre());
+    EXPECT_EQ(node4_4, node4_3->next());
+    EXPECT_EQ(node4_3, node4_4->pre());
+    EXPECT_EQ(node4_5, node4_4->next());
+    EXPECT_EQ(node4_4, node4_5->pre());
+    EXPECT_EQ(nullptr, node4_5->next());
+
+    EXPECT_EQ(2, root->KeySize());
+
+    EXPECT_EQ(2, node2_1->KeySize());
+    EXPECT_EQ(1, node2_2->KeySize());
+
+    EXPECT_EQ(2, node3_1->KeySize());
+    EXPECT_EQ(2, node3_2->KeySize());
+    EXPECT_EQ(1, node3_3->KeySize());
+
+    EXPECT_EQ(2, node4_1->KeySize());
+    EXPECT_EQ(2, node4_2->KeySize());
+    EXPECT_EQ(2, node4_3->KeySize());
+    EXPECT_EQ(2, node4_4->KeySize());
+    EXPECT_EQ(1, node4_5->KeySize());
+
+    EXPECT_EQ(11, root->entries()[0].first);
+    EXPECT_EQ(13, root->entries()[1].first);
+
+    EXPECT_EQ(5, node2_1->entries()[0].first);
+    EXPECT_EQ(11, node2_1->entries()[1].first);
+    EXPECT_EQ(13, node2_2->entries()[0].first);
+
+    EXPECT_EQ(2, node3_1->entries()[0].first);
+    EXPECT_EQ(5, node3_1->entries()[1].first);
+    EXPECT_EQ(8, node3_2->entries()[0].first);
+    EXPECT_EQ(11, node3_2->entries()[1].first);
+    EXPECT_EQ(13, node3_3->entries()[0].first);
+
+    EXPECT_EQ(1, node4_1->entries()[0].first);
+    EXPECT_EQ(2, node4_1->entries()[1].first);
+    EXPECT_EQ(3, node4_2->entries()[0].first);
+    EXPECT_EQ(5, node4_2->entries()[1].first);
+    EXPECT_EQ(6, node4_3->entries()[0].first);
+    EXPECT_EQ(8, node4_3->entries()[1].first);
+    EXPECT_EQ(9, node4_4->entries()[0].first);
+    EXPECT_EQ(11, node4_4->entries()[1].first);
+    EXPECT_EQ(13, node4_5->entries()[0].first);
+
+    t2_->remove(1);
+    EXPECT_EQ(1, node4_1->KeySize());
+    EXPECT_EQ(2, node4_1->entries()[0].first);
+
+    t2_->remove(2);
+    EXPECT_EQ(2, node3_1->KeySize());
+    EXPECT_EQ(3, node3_1->entries()[0].first);
+    EXPECT_EQ(5, node3_1->entries()[1].first);
+
+    EXPECT_EQ(1, node4_1->KeySize());
+    EXPECT_EQ(3, node4_1->entries()[0].first);
+
+    EXPECT_EQ(1, node4_2->KeySize());
+    EXPECT_EQ(5, node4_2->entries()[0].first);
+
+    t2_->remove(3);
+    node4_1 = (BPNode<int>*)node3_1->entries()[0].second;
+    EXPECT_EQ(1, node3_1->KeySize());
+    EXPECT_EQ(5, node3_1->entries()[0].first);
+    EXPECT_EQ(1, node4_1->KeySize());
+    EXPECT_EQ(5, node4_1->entries()[0].first);
+
+//    t2_->remove(5);
+
+    for (int i = 3; i < 6; i++) {
+        t2_->remove(key[i]);
+    }
+    EXPECT_EQ(2, root->KeySize());
+    EXPECT_EQ(11, root->entries()[0].first);
+    EXPECT_EQ(13, root->entries()[1].first);
+
+    EXPECT_EQ(1, node2_1->KeySize());
+    EXPECT_EQ(11, node2_1->entries()[0].first);
+
+    EXPECT_EQ(1, node2_1->KeySize());
+    EXPECT_EQ(13, node2_2->entries()[0].first);
+
+    EXPECT_EQ(kInternal, node2_1->type());
+    EXPECT_EQ(kInternal, node2_2->type());
+
+    t2_->remove(11);
+    t2_->remove(13);
 }
 
 //TEST_F(BPTreeFixture, Insert) {

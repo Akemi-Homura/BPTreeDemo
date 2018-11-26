@@ -7,13 +7,14 @@
 
 #include <vector>
 #include <iostream>
+#include <map>
 #include "BPTHelper.h"
 
 enum BPNodeType {
     kLeaf, kInternal
 };
 
-template <typename T>
+template<typename T>
 class BPNode {
 public:
 //    using iter_type=typename std::vector<std::pair<T,void*>>::iterator;
@@ -38,40 +39,31 @@ public:
 
     bool HasKey(T key) const;
 
-    std::vector<std::pair<T, void *>> & entries();
+    std::map<T, void *> &entries();
 
-    void Insert(T key,void*);
+    void Insert(T key, void *);
 
     void Remove(T key);
 
-    void SetParent(BPNode<T>* node);
+    void SetParent(BPNode<T> *node);
 
-    void SetPre(BPNode<T>*  node);
+    void SetPre(BPNode<T> *node);
 
-    void SetNext(BPNode<T>* node);
+    void SetNext(BPNode<T> *node);
 
-    void* FindValue(T key)const {
-        if(!HasKey(key)){
+    void *FindValue(T key) {
+        if (!HasKey(key)) {
             NoSuchKeyError(key);
         }
-        return entries_[FindIndex(key)].second;
+        return entries_[key];
     }
 
-    int FindIndex(T key) const{
-        int index;
-        for(index=0;index<entries_.size();index++){
-            if(key <= entries_[index].first){
-                break;
-            }
-        }
-        return index;
-    }
 
-    BPNode<T>* parent();
+    BPNode<T> *parent();
 
-    BPNode<T>* pre();
+    BPNode<T> *pre();
 
-    BPNode<T>* next();
+    BPNode<T> *next();
 
 private:
     const int order_;
@@ -79,16 +71,16 @@ private:
     const int max_entry_num_;
     const int min_entry_num_;
 
-    BPNode<T>* parent_ = nullptr;
-    BPNode<T>* pre_ = nullptr;
-    BPNode<T>* next_ = nullptr;
-    std::vector<std::pair<T,void*> > entries_;
+    BPNode<T> *parent_ = nullptr;
+    BPNode<T> *pre_ = nullptr;
+    BPNode<T> *next_ = nullptr;
+    std::map<T, void *> entries_;
 };
 
 
 template<typename T>
-BPNode<T>::BPNode(int _order, BPNodeType _type):order_(_order), type_(_type)
-        ,max_entry_num_(order_), min_entry_num_((order_+1) / 2){
+BPNode<T>::BPNode(int _order, BPNodeType _type):order_(_order), type_(_type), max_entry_num_(order_),
+                                                min_entry_num_((order_ + 1) / 2) {
 
 }
 
@@ -104,7 +96,7 @@ int BPNode<T>::order() const {
 
 template<typename T>
 int BPNode<T>::KeySize() const {
-    return (int)entries_.size();
+    return (int) entries_.size();
 }
 
 template<typename T>
@@ -123,18 +115,16 @@ bool BPNode<T>::IsMoreThanHalfFull() const {
 }
 
 template<typename T>
-void BPNode<T>::Insert(T key, void * value) {
-    auto iter = entries_.begin();
-    for(;iter!=entries_.end() && key > iter->first; iter++);
-    entries_.insert(iter, std::pair<T,void*>(key,value));
+void BPNode<T>::Insert(T key, void *value) {
+    entries_[key] = value;
 }
 
 template<typename T>
 void BPNode<T>::Remove(T key) {
-    if(!HasKey(key)){
+    if (!HasKey(key)) {
         NoSuchKeyError(key);
     }
-    entries_.erase(FindIndex(key) + entries_.begin());
+    entries_.erase(key);
 }
 
 
@@ -155,8 +145,7 @@ BPNode<T> *BPNode<T>::next() {
 
 template<typename T>
 bool BPNode<T>::HasKey(T key) const {
-    auto iter = FindIndex(key) + entries_.begin();
-    return iter != entries_.end() && iter->first == key;
+    return entries_.find(key) != entries_.end();
 }
 
 template<typename T>
@@ -175,7 +164,7 @@ void BPNode<T>::SetNext(BPNode<T> *node) {
 }
 
 template<typename T>
-std::vector<std::pair<T, void *>> & BPNode<T>::entries() {
+std::map<T, void *> &BPNode<T>::entries() {
     return entries_;
 }
 

@@ -63,8 +63,7 @@ template<typename T, typename E>
 void BPTree<T, E>::insert(T key, E data) {
     auto leaf = FindLeaf(key);
     if (leaf->HasKey(key)) {
-        int index = leaf->FindIndex(key);
-        leaf->entries()[index].second = data;
+        leaf->entries()[key] = data;
     } else {
         UpdateParentWhenInsert(leaf, key);
         leaf->Insert(key, data);
@@ -86,12 +85,7 @@ BPNode<T> *BPTree<T, E>::FindLeaf(T key) {
     BPNode<T> *res = root_;
     while (res->type() != kLeaf) {
         auto entries = res->entries();
-        auto iter = entries.begin();
-        for (; iter != entries.end(); iter++) {
-            if (key <= iter->first) {
-                break;
-            }
-        }
+        auto iter = entries.lower_bound(key);
         if (iter == entries.end()) {
             iter--;
         }
@@ -115,8 +109,11 @@ void BPTree<T, E>::split(BPNode<T> *node) {
     auto *left_node = new BPNode<T>(order_, node->type());
     auto &left_entries = left_node->entries();
 
-    left_entries.insert(left_entries.begin(), origin_entries.begin(), origin_entries.begin() + left_key_size);
-    origin_entries.erase(origin_entries.begin(), origin_entries.begin() + left_key_size);
+    auto it_ = origin_entries.begin();
+    for (int i = 0; i < left_key_size; i++) {
+        left_entries.insert(*it_);
+        it_ = origin_entries.erase(it_);
+    }
     if (left_node->type() == kInternal) {
         for (auto item:left_entries) {
             ((BPNode<T> *) item.second)->SetParent(left_node);
@@ -130,9 +127,9 @@ void BPTree<T, E>::split(BPNode<T> *node) {
         if (node == root_) {
             root_ = parent;
         }
-        parent->Insert(origin_entries.back().first, (void *) node);
+        parent->Insert(origin_entries.rbegin()->first, (void *) node);
     }
-    parent->Insert(left_entries.back().first, (void *) left_node);
+    parent->Insert(left_entries.rbegin()->first, (void *) left_node);
 
     left_node->SetParent(parent);
     left_node->SetPre(node->pre());
@@ -147,9 +144,11 @@ void BPTree<T, E>::split(BPNode<T> *node) {
 
 template<typename T, typename E>
 void BPTree<T, E>::UpdateParentWhenInsert(BPNode<T> *node, T key) {
-    while (node->parent() != nullptr && node->parent()->entries().back().first < key) {
+    while (node->parent() != nullptr && node->parent()->entries().rbegin()->first < key) {
         node = node->parent();
-        node->entries()[node->KeySize() - 1].first = key;
+        auto data = node->entries().rbegin()->second;
+        node->entries().erase(--node->entries().end());
+        node->entries()[key] = data;
     }
 }
 
@@ -163,7 +162,9 @@ template<typename T, typename E>
 void BPTree<T, E>::UpdateParent(BPNode<T> *node, T new_key, T old_key) {
     while (node->parent() != nullptr && node->parent()->HasKey(old_key)) {
         node = node->parent();
-        node->entries()[node->FindIndex(old_key)].first = new_key;
+        auto data = node->entries()[old_key];
+        node->entries().erase(old_key);
+        node->entries()[new_key] = data;
     }
 }
 
@@ -172,19 +173,21 @@ bool BPTree<T, E>::BorrowFromSibling(BPNode<T> *node, BPNode<T> *sibling, int ol
     if (sibling == nullptr) return false;
     if (node->parent() != sibling->parent()) return false;
     if (sibling->IsMoreThanHalfFull()) {
-        auto &sibling_entries = sibling->entries();
-        auto &node_entries = node->entries();
+        std::map<T, void *> &sibling_entries = sibling->entries();
+        std::map<T, void *> &node_entries = node->entries();
 
         if (left) {
-            node_entries.insert(node_entries.begin(), sibling_entries.back());
-            sibling_entries.pop_back();
-            UpdateParent(sibling, sibling_entries.back().first, node_entries.front().first);
-            ((BPNode<T>*)node_entries.front().second)->SetParent(node);
+            auto sibling_last_iter = sibling_entries.rbegin();
+            node_entries.insert(*sibling_last_iter);
+            sibling_entries.erase(--sibling_entries.end());
+            UpdateParent(sibling, sibling_entries.rbegin()->first, node_entries.begin()->first);
+            ((BPNode<T> *) node_entries.begin()->second)->SetParent(node);
         } else {
-            node_entries.push_back(sibling_entries.front());
-            sibling_entries.erase(sibling_entries.begin());
-            UpdateParent(node, node_entries.back().first, old_key);
-            ((BPNode<T>*)node_entries.back().second)->SetParent(node);
+            auto sibling_first_iter = sibling_entries.begin();
+            node_entries.insert(*sibling_first_iter);
+            sibling_entries.erase(sibling_first_iter);
+            UpdateParent(node, node_entries.rbegin()->first, old_key);
+            ((BPNode<T> *) node_entries.rbegin()->second)->SetParent(node);
         }
         return true;
     }
@@ -199,8 +202,10 @@ bool BPTree<T, E>::merge(BPNode<T> *left, BPNode<T> *right, int removed_key) {
     auto &left_entries = left->entries();
     auto &right_entries = right->entries();
 
-    right_entries.insert(right_entries.begin(), left_entries.begin(), left_entries.end());
-    if(left->type() == kInternal) {
+    for (auto it_ = left_entries.begin(); it_ != left_entries.end(); it_++) {
+        right_entries.insert(*it_);
+    }
+    if (left->type() == kInternal) {
         for (auto item : left_entries) {
             ((BPNode<T> *) item.second)->SetParent(right);
         }
@@ -213,7 +218,7 @@ bool BPTree<T, E>::merge(BPNode<T> *left, BPNode<T> *right, int removed_key) {
         RemoveNode(right->parent());
         right->SetParent(nullptr);
     } else {
-        RemoveEntry(right->parent(), left_entries.size() == 0?removed_key:left_entries.back().first);
+        RemoveEntry(right->parent(), left_entries.size() == 0 ? removed_key : left_entries.rbegin()->first);
     }
     RemoveNode(left);
     return true;
@@ -223,12 +228,14 @@ template<typename T, typename E>
 void BPTree<T, E>::RemoveEntry(BPNode<T> *node, T key) {
 
     node->Remove(key);
-    if(node->KeySize()) UpdateParent(node, node->entries().back().first, key);
+    if (node->KeySize()) UpdateParent(node, node->entries().rbegin()->first, key);
 
-    if(node->type() == kLeaf && node == root_)return;
+    if (node->type() == kLeaf && node == root_)return;
     if (node->IsHalfFull())return;
     if (BorrowFromSibling(node, node->pre(), key, true)) return;
-    if (BorrowFromSibling(node, node->next(), node->KeySize()==0?key:node->entries().back().first, false)) return;
+    if (BorrowFromSibling(node, node->next(), node->KeySize() == 0 ? key : node->entries().rbegin()->first,
+                          false))
+        return;
     if (merge(node->pre(), node, key)) return;
     if (merge(node, node->next(), key)) return;
     RemoveEntry(node->parent(), key);

@@ -49,9 +49,11 @@ protected:
         }
 
 
-        struct timeval insert_st_time, insert_ed_time,rm_st_time,rm_ed_time
-                        ,exist_test_st_time, exist_test_ed_time;
+        struct timeval insert_st_time, insert_ed_time, rm_st_time, rm_ed_time
+        , exist_test_st_time, exist_test_ed_time;
         char res_insert[20], res_remove[20], res_exist_test[20];
+
+
         gettimeofday(&insert_st_time, NULL);
 
         for (int i = 0; i < keys_.size(); i++) {
@@ -76,8 +78,8 @@ protected:
         output_time_spend(exist_test_st_time, exist_test_ed_time, res_exist_test);
 
         printf("key num: %d, max child num: %d, %ld insert operations spend %s and %ld remove operations speed %s "
-                       "and %ld exist test operations spend %s\n",
-               num, order, keys_.size(), res_insert,removed_keys_.size(), res_remove, keys_.size(), res_exist_test);
+               "and %ld exist test operations spend %s\n",
+               num, order, keys_.size(), res_insert, removed_keys_.size(), res_remove, keys_.size(), res_exist_test);
 
     }
 
@@ -137,7 +139,7 @@ protected:
 };
 
 TEST_F(BPTreeMoreDataFixture, Random) {
-    int data_size[] = {10, 1000, 10000, 100000, 1000000};
+    int data_size[] = {10, 1000, 10000, 100000, 1000000, 10000000};
     int order[] = {5, 10, 20, 40, 100};
 
     for (int num : data_size) {

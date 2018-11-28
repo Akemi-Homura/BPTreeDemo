@@ -6,16 +6,16 @@ set(CMAKE_CXX_STANDARD 11)
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
         RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download )
-if(result)
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
+if (result)
     message(FATAL_ERROR "CMake step for googletest failed: ${result}")
-endif()
+endif ()
 execute_process(COMMAND ${CMAKE_COMMAND} --build .
         RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download )
-if(result)
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/googletest-download)
+if (result)
     message(FATAL_ERROR "Build step for googletest failed: ${result}")
-endif()
+endif ()
 
 # Prevent overriding the parent project's compiler/linker
 # settings on Windows
@@ -32,38 +32,16 @@ add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src
 # later. Otherwise we have to add them here ourselves.
 if (CMAKE_VERSION VERSION_LESS 2.8.11)
     include_directories("${gtest_SOURCE_DIR}/include")
-endif()
+endif ()
 
-
-set(BPNode
-        BPNode.h
-        )
-
-set(BPTree
-        BPTree.h
-        BPTHelper.h
-        )
-
-add_executable(BPNodeTest
-        BPNodeTest.cpp
-        )
-
-add_executable(BPTreeTest
-        ${BPNode}
-        ${BPTree}
-        BPTreeTest.cpp)
-
-add_executable(BPMoreDataTest
-        ${BPNode}
-        ${BPTree}
-        BPMoreDataTest.cpp)
+add_executable(OrderedLinkListTest
+        OrderedLinkListTest.cpp)
 
 set(TESTS
-        BPNodeTest;
-        BPTreeTest;
-        BPMoreDataTest)
+        OrderedLinkListTest;
+        )
 
-set($ENV{GTEST_CATCH_EXCEPTIONS} 0)
+#set($ENV{GTEST_CATCH_EXCEPTIONS} 0)
 #target_link_libraries(BPTreeTest ${GTEST_LDFLAGS})
 #target_compile_options(BPTreeTest PUBLIC ${GTEST_CFLAGS})
 
@@ -73,9 +51,10 @@ endforeach ()
 
 include(CTest)
 
-add_test(BPNTest BPNodeTest)
-add_test(BPTTEST BPTreeTest)
-add_test(BPTMTest BPMoreDataTest)
+add_test(LinkListTest OrderedLinkListTest)
+#add_test(BPNTest BPNodeTest)
+#add_test(BPTTEST BPTreeTest)
+#add_test(BPTMTest BPMoreDataTest)
 #add_executable(testapp samples/sample3_unittest.cc)
 #target_link_libraries(testapp ${GTEST_LDFLAGS})
 #target_compile_options(testapp PUBLIC ${GTEST_CFLAGS})
@@ -83,5 +62,6 @@ add_test(BPTMTest BPMoreDataTest)
 #include(CTest)
 #add_test(first_and_only_test testapp)
 
-add_executable(BPTDemo
+add_executable(main
+        BPlusTree.h
         main.cpp)

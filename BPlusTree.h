@@ -18,6 +18,8 @@ public:
     void Insert(int key, int value);
 
     void Split(BPlusNode *node);
+
+    BPlusNode * GetLeftMostNode() const;
 };
 
 void BPlusTree::Split(BPlusNode *node) {
@@ -73,6 +75,12 @@ void BPlusTree::Insert(int key, int value) {
     if (now->list_->size_ == order_) {
         Split(now);
     }
+}
+
+BPlusNode * BPlusTree::GetLeftMostNode() const{
+    BPlusNode *leaf_head;
+    for (leaf_head = root_; leaf_head->type_ != kLeaf; leaf_head = leaf_head->list_->head_->data_.val_.child);
+    return leaf_head;
 }
 
 

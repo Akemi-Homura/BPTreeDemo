@@ -37,8 +37,12 @@ endif ()
 add_executable(OrderedLinkListTest
         OrderedLinkListTest.cpp)
 
+add_executable(SerializerTest
+        SerializerTest.cpp)
+
 set(TESTS
         OrderedLinkListTest;
+        SerializerTest;
         )
 
 #set($ENV{GTEST_CATCH_EXCEPTIONS} 0)
@@ -64,4 +68,4 @@ add_test(LinkListTest OrderedLinkListTest)
 
 add_executable(main
         BPlusTree.h
-        main.cpp)
+        main.cpp SimpleSerializer.h SerializeHelperAbstract.h)

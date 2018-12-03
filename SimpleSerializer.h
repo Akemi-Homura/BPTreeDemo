@@ -26,6 +26,7 @@ bool SimpleSerializer::Serialize(const BPlusTree *tree, const char *filename) {
         }
     }
     output_stream.close();
+    return true;
 }
 
 bool SimpleSerializer::Deserialize(BPlusTree *tree, const char *filename) {
@@ -39,6 +40,7 @@ bool SimpleSerializer::Deserialize(BPlusTree *tree, const char *filename) {
     else if (input_stream.fail())
         std::cout << "Non-integer data encountered\n";
     input_stream.close();
+    return true;
 }
 
 

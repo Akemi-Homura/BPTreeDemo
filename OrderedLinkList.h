@@ -15,7 +15,6 @@ enum DataType {
 class Data {
 public:
     int key_;
-    DataType type_;
     union {
         int value;
         BPlusNode *child;
@@ -25,13 +24,11 @@ public:
 
     explicit Data(int key, int val) {
         key_ = key;
-        type_ = kLeaf;
         val_.value = val;
     }
 
     explicit Data(int key, BPlusNode *child) {
         key_ = key;
-        type_ = kInternal;
         val_.child = child;
     }
 };

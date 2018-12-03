@@ -12,6 +12,8 @@ class BPlusTree {
 public:
     int order_;
     BPlusNode *root_;
+    /* num of nodes */
+    int size_;
 
     BPlusTree(int order);
 
@@ -19,10 +21,11 @@ public:
 
     void Split(BPlusNode *node);
 
-    BPlusNode * GetLeftMostNode() const;
+    BPlusNode *GetLeftMostNode() const;
 };
 
 void BPlusTree::Split(BPlusNode *node) {
+    size_++;
     int left_key_size = (node->list_->size_ + 1) / 2;
     BPlusNode *left_node = new BPlusNode(node->type_);
     node->list_->Split(left_key_size, left_node->list_);
@@ -34,6 +37,7 @@ void BPlusTree::Split(BPlusNode *node) {
     }
 
     if (node->parent_ == nullptr) {
+        size_++;
         node->parent_ = new BPlusNode(kInternal);
         if (node == root_) {
             root_ = node->parent_;
@@ -62,6 +66,7 @@ void BPlusTree::Split(BPlusNode *node) {
 BPlusTree::BPlusTree(int order) {
     this->order_ = order;
     root_ = new BPlusNode(kLeaf);
+    size_ = 1;
 }
 
 void BPlusTree::Insert(int key, int value) {
@@ -77,7 +82,7 @@ void BPlusTree::Insert(int key, int value) {
     }
 }
 
-BPlusNode * BPlusTree::GetLeftMostNode() const{
+BPlusNode *BPlusTree::GetLeftMostNode() const {
     BPlusNode *leaf_head;
     for (leaf_head = root_; leaf_head->type_ != kLeaf; leaf_head = leaf_head->list_->head_->data_.val_.child);
     return leaf_head;

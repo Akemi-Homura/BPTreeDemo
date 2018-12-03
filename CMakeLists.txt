@@ -40,9 +40,13 @@ add_executable(OrderedLinkListTest
 add_executable(SerializerTest
         SerializerTest.cpp)
 
+add_executable(BPlusTreeTest
+        BPlusTreeTest.cpp)
+
 set(TESTS
         OrderedLinkListTest;
         SerializerTest;
+        BPlusTreeTest;
         )
 
 #set($ENV{GTEST_CATCH_EXCEPTIONS} 0)

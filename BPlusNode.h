@@ -14,6 +14,7 @@ public:
     BPlusNode *right_sibling_;
     BPlusNode *parent_;
     ListNode *entry_in_parent_;
+    int index;
     DataType type_;
 
     BPlusNode(DataType type) {

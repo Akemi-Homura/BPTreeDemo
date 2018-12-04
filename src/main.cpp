@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sys/time.h>
-#include "BPlusTree.h"
-#include "OrderedLinkList.h"
+#include "src/bpt/BPlusTree.h"
+#include "src/ordered_list/OrderedLinkList.h"
 #include <queue>
 
 //#include "BPNode.h"
@@ -66,7 +66,7 @@ void output_node_recursive(BPlusNode *root) {
             index++;
         }
         output_single_node(now, layer, index);
-        if (now->type_ == kInternal) {
+        if (now->type_ == Data::kInternal) {
             for (auto t = now->list_->head_; t != nullptr; t = t->next_) {
                 q.push(std::pair<BPlusNode *, int>(t->data_.val_.child, layer + 1));
             }
@@ -75,9 +75,9 @@ void output_node_recursive(BPlusNode *root) {
 }
 
 void output_single_node(BPlusNode *node, int layer, int index) {
-    printf("node_%d_%d %s:\n", layer, index, node->type_ == kInternal ? "Internal" : "Leaf");
+    printf("node_%d_%d %s:\n", layer, index, node->type_ == Data::kInternal ? "Internal" : "Leaf");
     for (auto now = node->list_->head_; now != nullptr; now = now->next_) {
-        if (node->type_ == kInternal) {
+        if (node->type_ == Data::kInternal) {
             printf("%d ", now->data_.key_);
         } else {
             printf("(%d %d) ", now->data_.key_, now->data_.val_.value);

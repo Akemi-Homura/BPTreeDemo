@@ -34,14 +34,16 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
     include_directories("${gtest_SOURCE_DIR}/include")
 endif ()
 
+include_directories(".")
+
 add_executable(OrderedLinkListTest
-        OrderedLinkListTest.cpp)
+        test/OrderedLinkListTest.cpp)
 
 add_executable(SerializerTest
-        SerializerTest.cpp)
+        test/SerializerTest.cpp)
 
 add_executable(BPlusTreeTest
-        BPlusTreeTest.cpp)
+        test/BPlusTreeTest.cpp)
 
 set(TESTS
         OrderedLinkListTest;
@@ -71,5 +73,5 @@ add_test(LinkListTest OrderedLinkListTest)
 #add_test(first_and_only_test testapp)
 
 add_executable(main
-        BPlusTree.h
-        main.cpp SimpleSerializer.h SerializeHelperAbstract.h)
+        src/bpt/BPlusTree.h
+        src/main.cpp src/serializer/SimpleSerializer.h src/serializer/SerializeHelperAbstract.h)

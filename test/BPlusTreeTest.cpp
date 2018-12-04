@@ -1,7 +1,7 @@
 //
 // Created by quals on 2018/11/30.
 //
-#include "BPlusTree.h"
+#include "src/bpt/BPlusTree.h"
 #include <gtest/gtest.h>
 
 class BPlusTreeTest : public ::testing::Test{

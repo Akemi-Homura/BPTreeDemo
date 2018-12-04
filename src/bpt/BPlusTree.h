@@ -6,7 +6,7 @@
 #define BPTDEMO_BPLUSTREE_H
 
 #include "BPlusNode.h"
-#include "OrderedLinkList.h"
+#include "src/ordered_list/OrderedLinkList.h"
 
 class BPlusTree {
 public:
@@ -30,7 +30,7 @@ void BPlusTree::Split(BPlusNode *node) {
     BPlusNode *left_node = new BPlusNode(node->type_);
     node->list_->Split(left_key_size, left_node->list_);
 
-    if (node->type_ == kInternal) {
+    if (node->type_ == Data::kInternal) {
         for (auto now = left_node->list_->head_; now != nullptr; now = now->next_) {
             now->data_.val_.child->parent_ = left_node;
         }
@@ -38,7 +38,7 @@ void BPlusTree::Split(BPlusNode *node) {
 
     if (node->parent_ == nullptr) {
         size_++;
-        node->parent_ = new BPlusNode(kInternal);
+        node->parent_ = new BPlusNode(Data::kInternal);
         if (node == root_) {
             root_ = node->parent_;
         }
@@ -49,7 +49,7 @@ void BPlusTree::Split(BPlusNode *node) {
 
     left_node->parent_ = node->parent_;
 
-    if (node->type_ == kLeaf) {
+    if (node->type_ == Data::kLeaf) {
         left_node->left_sibling_ = node->left_sibling_;
         left_node->right_sibling_ = node;
         if (node->left_sibling_ != nullptr) {
@@ -65,13 +65,13 @@ void BPlusTree::Split(BPlusNode *node) {
 
 BPlusTree::BPlusTree(int order) {
     this->order_ = order;
-    root_ = new BPlusNode(kLeaf);
+    root_ = new BPlusNode(Data::kLeaf);
     size_ = 1;
 }
 
 void BPlusTree::Insert(int key, int value) {
     BPlusNode *now = root_;
-    while (now->type_ != kLeaf) {
+    while (now->type_ != Data::kLeaf) {
         ListNode *entry = now->list_->FindFirstBigger(key);
         entry->data_.key_ = key;
         now = entry->data_.val_.child;
@@ -84,7 +84,7 @@ void BPlusTree::Insert(int key, int value) {
 
 BPlusNode *BPlusTree::GetLeftMostNode() const {
     BPlusNode *leaf_head;
-    for (leaf_head = root_; leaf_head->type_ != kLeaf; leaf_head = leaf_head->list_->head_->data_.val_.child);
+    for (leaf_head = root_; leaf_head->type_ != Data::kLeaf; leaf_head = leaf_head->list_->head_->data_.val_.child);
     return leaf_head;
 }
 

@@ -5,9 +5,9 @@
 #ifndef BPTDEMO_TREESTRUCTSERIALIZER_H
 #define BPTDEMO_TREESTRUCTSERIALIZER_H
 
-#include "BPlusTree.h"
+#include "src/bpt/BPlusTree.h"
 #include "SerializeHelperAbstract.h"
-#include "OrderedLinkList.h"
+#include "src/ordered_list/OrderedLinkList.h"
 #include <queue>
 
 struct BPlusNodeModel {
@@ -53,7 +53,7 @@ private:
 
 void TreeStructureSerializer::DFS(FILE *fp, BPlusNode *node, int &index) {
     node->index = index;
-    if (node->type_ == kInternal) {
+    if (node->type_ == Data::kInternal) {
         for (auto now = node->list_->head_; now != nullptr; now = now->next_) {
             DFS(fp, now->data_.val_.child, ++index);
         }
@@ -104,12 +104,12 @@ BPlusNodeModel TreeStructureSerializer::get_one_node_model(FILE *fp) {
 BPlusNode *
 TreeStructureSerializer::BuildNodeRecursiveFromNodeModelArray(BPlusNodeModel *mode_array, int index) {
     BPlusNodeModel model = mode_array[index];
-    BPlusNode *res = new BPlusNode(model.type_ == TInternal ? kInternal : kLeaf);
+    BPlusNode *res = new BPlusNode(model.type_ == TInternal ? Data::kInternal : Data::kLeaf);
 
     for (int i = 0; i < model.child_size_; i++) {
         Data data;
         data.key_ = model.key_[i];
-        if (res->type_ == kInternal) {
+        if (res->type_ == Data::kInternal) {
             data.val_.child = BuildNodeRecursiveFromNodeModelArray(mode_array, model.values_[i]);
         } else {
             data.val_.value = model.values_[i];
@@ -122,18 +122,18 @@ TreeStructureSerializer::BuildNodeRecursiveFromNodeModelArray(BPlusNodeModel *mo
 
 void TreeStructureSerializer::PrintNode(FILE *fp, const BPlusNode *node) {
     // output node
-    int type = node->type_ == kLeaf ? TLeaf : TInternal;
+    int type = node->type_ == Data::kLeaf ? TLeaf : TInternal;
     fprintf(fp, "%d %d %d\n", type, node->index, node->list_->size_);
     for (auto now = node->list_->head_; now != nullptr; now = now->next_) {
         fprintf(fp, "(%d,%d)%c", now->data_.key_,
-                node->type_ == kInternal ? now->data_.val_.child->index : now->data_.val_.value,
+                node->type_ == Data::kInternal ? now->data_.val_.child->index : now->data_.val_.value,
                 " \n"[now->next_ == nullptr]);
     }
 }
 
 void TreeStructureSerializer::PrintNodeRecursive(FILE *fp, BPlusNode *node) {
     PrintNode(fp, node);
-    if (node->type_ == kInternal) {
+    if (node->type_ == Data::kInternal) {
         for (auto now = node->list_->head_; now != nullptr; now = now->next_) {
             PrintNodeRecursive(fp, now->data_.val_.child);
         }

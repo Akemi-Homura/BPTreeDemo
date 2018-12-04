@@ -2,10 +2,10 @@
 // Created by quals on 2018/11/29.
 //
 
-#include "SimpleSerializer.h"
-#include "BPlusTree.h"
-#include "TreeStructureSerializer.h"
-#include "OrderedLinkList.h"
+#include "src/serializer/SimpleSerializer.h"
+#include "src/bpt/BPlusTree.h"
+#include "src/serializer/TreeStructureSerializer.h"
+#include "src/ordered_list/OrderedLinkList.h"
 #include <gtest/gtest.h>
 
 typedef void (FuncTreeCompare)(BPlusTree *, BPlusTree *);
@@ -68,7 +68,7 @@ void CompareNodeRecursive(BPlusNode *n1, BPlusNode *n2) {
     auto now1 = n1->list_->head_, now2 = n2->list_->head_;
     for (; now1 != nullptr && now2 != nullptr; now1 = now1->next_, now2 = now2->next_) {
         ASSERT_EQ(now1->data_.key_, now2->data_.key_);
-        if (n1->type_ == kInternal) {
+        if (n1->type_ == Data::kInternal) {
             CompareNodeRecursive(now1->data_.val_.child, now2->data_.val_.child);
         } else {
             ASSERT_EQ(now1->data_.val_.value, now2->data_.val_.value);

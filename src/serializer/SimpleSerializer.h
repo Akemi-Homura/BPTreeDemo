@@ -6,8 +6,8 @@
 #define BPTDEMO_SIMPLESERIALIZER_H
 
 #include "SerializeHelperAbstract.h"
-#include "BPlusTree.h"
-#include "OrderedLinkList.h"
+#include "src/bpt/BPlusTree.h"
+#include "src/ordered_list/OrderedLinkList.h"
 #include <fstream>
 #include <iostream>
 

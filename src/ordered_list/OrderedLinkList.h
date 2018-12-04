@@ -7,13 +7,15 @@
 
 class BPlusNode;
 
-enum DataType {
-    kInternal,
-    kLeaf
-};
+
 
 class Data {
 public:
+    enum DataType {
+        kInternal,
+        kLeaf
+    };
+    
     int key_;
     union {
         int value;

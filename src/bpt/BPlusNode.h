@@ -5,7 +5,7 @@
 #ifndef BPTDEMO_BPLUSNODE_H
 #define BPTDEMO_BPLUSNODE_H
 
-#include "OrderedLinkList.h"
+#include "src/ordered_list/OrderedLinkList.h"
 
 class BPlusNode {
 public:
@@ -15,9 +15,9 @@ public:
     BPlusNode *parent_;
     ListNode *entry_in_parent_;
     int index;
-    DataType type_;
+    Data::DataType type_;
 
-    BPlusNode(DataType type) {
+    BPlusNode(Data::DataType type) {
         list_ = new OrderedLinkList;
         type_ = type;
         left_sibling_ = right_sibling_ = parent_ = nullptr;

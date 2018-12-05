@@ -8,14 +8,13 @@
 class BPlusNode;
 
 
-
 class Data {
 public:
     enum DataType {
         kInternal,
         kLeaf
     };
-    
+
     int key_;
     union {
         int value;
@@ -61,7 +60,11 @@ public:
 
     ListNode *Insert(Data data);
 
-    void InsertLast(Data data);
+    ListNode *Insert(OrderedLinkList *list);
+
+    ListNode *InsertLast(Data data);
+
+    ListNode *InsertLast(OrderedLinkList *list);
 
     void Remove(int key);
 
@@ -111,11 +114,7 @@ ListNode *OrderedLinkList::Insert(Data data) {
     }
 
     ListNode *lower_bound = FindLowerBound(data.key_);
-    if (lower_bound != nullptr) {
-        return InsertBefore(lower_bound, data);
-    } else {
-        return InsertAfter(tail_, data);
-    }
+    return lower_bound != nullptr ? InsertBefore(lower_bound, data) : InsertAfter(tail_, data);
 }
 
 ListNode *OrderedLinkList::InsertBefore(ListNode *node, Data data) {
@@ -225,19 +224,30 @@ ListNode *OrderedLinkList::FindLowerBound(int key) {
     return nullptr;
 }
 
-void OrderedLinkList::InsertLast(Data data) {
+ListNode *OrderedLinkList::InsertLast(Data data) {
     if (head_ == nullptr) {
         head_ = tail_ = new ListNode(data);
         size_++;
-        return;
+        return head_;
     }
 
     ListNode *firstBigger = FindFirstBigger(data.key_);
-    if (firstBigger != nullptr) {
-        InsertAfter(firstBigger, data);
-    } else {
-        InsertBefore(head_, data);
-    }
+    return firstBigger != nullptr ? InsertAfter(firstBigger, data) : InsertBefore(head_, data);
+
+}
+
+ListNode *OrderedLinkList::Insert(OrderedLinkList *list) {
+    head_->pre_ = list->tail_;
+    list->tail_->next_ = head_;
+    head_ = list->head_;
+    return head_;
+}
+
+ListNode *OrderedLinkList::InsertLast(OrderedLinkList *list) {
+    tail_->next_ = list->head_;
+    list->head_->pre_ = tail_;
+    tail_ = list->tail_;
+    return tail_;
 }
 
 

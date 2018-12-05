@@ -68,7 +68,7 @@ void BPlusTree::Split(BPlusNode *node) {
         if (node == root_) {
             root_ = node->parent_;
         }
-        node->entry_in_parent_ = node->parent_->list_->Insert(Data(node->list_->head_->data_.key_, node));
+        node->entry_in_parent_ = node->parent_->list_->Insert(Data(node->list_->tail_->data_.key_, node));
     }
     left_node->entry_in_parent_ =
             node->parent_->list_->Insert(Data(left_node->list_->tail_->data_.key_, left_node));
@@ -99,6 +99,7 @@ void BPlusTree::Insert(int key, int value) {
     BPlusNode *now = root_;
     while (now->type_ != Data::kLeaf) {
         ListNode *entry = now->list_->FindFirstBigger(key);
+        if (entry == nullptr) entry = now->list_->head_;
         entry->data_.key_ = key;
         now = entry->data_.val_.child;
     }

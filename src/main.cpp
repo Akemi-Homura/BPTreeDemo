@@ -15,7 +15,7 @@
 //    sprintf(res, "%.*lfs", len, v * 1.0 / 1e6);
 //}
 //
-//void output_time_spend(timeval st, timeval ed, char *res) {
+//void timeval_str(timeval st, timeval ed, char *res) {
 //    long st_ms = get_ms_time(st);
 //    long ed_ms = get_ms_time(ed);
 //
@@ -40,7 +40,7 @@ int main() {
 //        t.insert(i, val[i]);
 //    }
 //    gettimeofday(&ed, NULL);
-//    output_time_spend(st, ed, res);
+//    timeval_str(st, ed, res);
 //    printf("spend time: %s\n", res);
     BPlusTree *tree = new BPlusTree(5);
     for (int i = 0; i < 10000000; i++) {

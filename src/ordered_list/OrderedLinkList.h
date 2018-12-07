@@ -240,6 +240,7 @@ ListNode *OrderedLinkList::Insert(OrderedLinkList *list) {
     head_->pre_ = list->tail_;
     list->tail_->next_ = head_;
     head_ = list->head_;
+    size_ += list->size_;
     return head_;
 }
 
@@ -247,6 +248,7 @@ ListNode *OrderedLinkList::InsertLast(OrderedLinkList *list) {
     tail_->next_ = list->head_;
     list->head_->pre_ = tail_;
     tail_ = list->tail_;
+    size_ += list->size_;
     return tail_;
 }
 

@@ -98,9 +98,11 @@ BPlusTree::BPlusTree(int order) {
 void BPlusTree::Insert(int key, int value) {
     BPlusNode *now = root_;
     while (now->type_ != Data::kLeaf) {
-        ListNode *entry = now->list_->FindFirstBigger(key);
-        if (entry == nullptr) entry = now->list_->head_;
-        entry->data_.key_ = key;
+        ListNode *entry = now->list_->FindLowerBound(key);
+        if (entry == nullptr) {
+            entry = now->list_->tail_;
+            entry->data_.key_ = key;
+        }
         now = entry->data_.val_.child;
     }
     now->list_->Insert(Data(key, value));
@@ -160,9 +162,10 @@ void BPlusTree::RemoveEntry(BPlusNode *node, ListNode *entry) {
 }
 
 void BPlusTree::UpdateEntryAfterRemove(BPlusNode *node) {
-    // update entry_in_parent
-    if (node->list_->size_ > 0) UpdateParent(node);
-    if (node == root_ || node->list_->size_ >= order_ / 2) return;
+    if (node == root_ || node->list_->size_ >= order_ / 2) {
+        if (node->list_->size_ > 0) UpdateParent(node);
+        return;
+    }
     if (BorrowFromSibling(node)) return;
     if (MergeSibling(node)) return;
     throw std::runtime_error("Can't Remove key");
@@ -170,15 +173,21 @@ void BPlusTree::UpdateEntryAfterRemove(BPlusNode *node) {
 
 void BPlusTree::RemoveEntry(BPlusNode *node, int key) {
     node->list_->Remove(key);
-    UpdateParent(node);
+    UpdateEntryAfterRemove(node);
 }
 
 bool BPlusTree::BorrowFromSibling(BPlusNode *node) {
-    auto left_sibling = node->entry_in_parent_->pre_->data_.val_.child;
-    auto right_sibling = node->entry_in_parent_->next_->data_.val_.child;
+    auto left_sibling = node->entry_in_parent_->pre_ ? node->entry_in_parent_->pre_->data_.val_.child : nullptr;
+    auto right_sibling = node->entry_in_parent_->next_ ? node->entry_in_parent_->next_->data_.val_.child : nullptr;
     if (CanBorrow(left_sibling)) {
         node->list_->Insert(left_sibling->list_->tail_->data_);
         left_sibling->list_->Remove(left_sibling->list_->tail_);
+
+        if (node->type_ == Data::kInternal) {
+            node->list_->head_->data_.val_.child->parent_ = node;
+            node->list_->head_->data_.val_.child->entry_in_parent_ = node->list_->head_;
+        }
+
         UpdateParent(left_sibling);
         return true;
     }
@@ -186,7 +195,13 @@ bool BPlusTree::BorrowFromSibling(BPlusNode *node) {
     if (CanBorrow(right_sibling)) {
         node->list_->InsertLast(right_sibling->list_->head_->data_);
         right_sibling->list_->Remove(right_sibling->list_->head_);
-        UpdateParent(right_sibling);
+
+        if (node->type_ == Data::kInternal) {
+            node->list_->tail_->data_.val_.child->parent_ = node;
+            node->list_->tail_->data_.val_.child->entry_in_parent_ = node->list_->tail_;
+        }
+
+        UpdateParent(node);
         return true;
     }
 
@@ -194,35 +209,36 @@ bool BPlusTree::BorrowFromSibling(BPlusNode *node) {
 }
 
 bool BPlusTree::MergeSibling(BPlusNode *node) {
-    bool merge_left_flag = true;
-    auto selected_sibling = node->entry_in_parent_->pre_->data_.val_.child;
-    if (selected_sibling == nullptr) {
-        selected_sibling = node->entry_in_parent_->next_->data_.val_.child;
-        merge_left_flag = false;
+    auto sibling = node->entry_in_parent_->pre_ ? node->entry_in_parent_->pre_->data_.val_.child : nullptr;
+    if (sibling == nullptr) {
+        sibling = node;
+        node = node->entry_in_parent_->next_ ? node->entry_in_parent_->next_->data_.val_.child : nullptr;
+        if (node == nullptr) return false;
     }
 
-    if (merge_left_flag) {
-        node->list_->Insert(selected_sibling->list_);
-    } else {
-        node->list_->InsertLast(selected_sibling->list_);
-    }
+    size_--;
+    node->list_->Insert(sibling->list_);
+
     if (node->type_ == Data::kInternal) {
-        for (auto now = selected_sibling->list_->head_; now != nullptr; now = now->next_) {
+        for (auto now = sibling->list_->head_; now != nullptr; now = now->next_) {
             now->data_.val_.child->parent_ = node;
         }
     } else {
-        if (merge_left_flag) {
-            node->left_sibling_ = selected_sibling->left_sibling_;
-            if (selected_sibling->left_sibling_ != nullptr) selected_sibling->left_sibling_->right_sibling_ = node;
-        } else {
-            node->right_sibling_ = selected_sibling->right_sibling_;
-            if (selected_sibling->right_sibling_ != nullptr) selected_sibling->right_sibling_->left_sibling_ = node;
-            node->entry_in_parent_ = selected_sibling->entry_in_parent_;
-        }
-    }
-    //TODO delete selected_sibling
+        node->left_sibling_ = sibling->left_sibling_;
+        if (sibling->left_sibling_ != nullptr) sibling->left_sibling_->right_sibling_ = node;
 
-    RemoveEntry(node->parent_, node->entry_in_parent_->pre_);
+    }
+    /* check if become root */
+    if (node->parent_ == root_ && node->parent_->list_->size_ <= order_ / 2) {
+        //TODO delete original root
+        root_ = node;
+        size_--;
+    } else {
+        UpdateParent(node);
+        //TODO delete sibling
+        RemoveEntry(node->parent_, node->entry_in_parent_->pre_);
+    }
+    return true;
 }
 
 bool BPlusTree::CanBorrow(BPlusNode *node) {

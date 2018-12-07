@@ -4,6 +4,7 @@
 #include "src/bpt/BPlusTree.h"
 #include <gtest/gtest.h>
 #include <random>
+#include <algorithm>
 #include <sys/time.h>
 #include <queue>
 
@@ -54,6 +55,8 @@ void TestFunc(DataGenerator *data_generator, OperationFun *operation_func, int s
 
 void InsertFunc(BPlusTree *tree, std::vector<std::pair<int, int> > data);
 
+void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data);
+
 long get_ms_time(timeval t);
 
 void num_to_str(long v, char *res, int len);
@@ -64,15 +67,46 @@ void output_node_recursive(BPlusNode *root);
 
 void output_single_node(BPlusNode *node, int layer, int index);
 
-TEST_F(BPlusTreeTest, MoreData) {
-    const int DATA_SIZE = 1000000;
-    int *data = new int[DATA_SIZE];
-    fill_random_num(DATA_SIZE);
+TEST_F(BPlusTreeTest, SynthesizeTest) {
+    const int size = 1000000;
+    const int order = 5;
+    char msg[100];
+    sprintf(msg, "Synthesize Test, %d data", size);
+    TestFunc(fill_random_num, SynthesizeFunc, size, order, msg);
+}
 
+TEST(BPlusTreeDebug, SynthesizeDebug) {
+    const int size = 11;
+    const int order = 5;
+    int data[] = {8, 7, 6, 9, 10, 0, 1, 4, 5, 2, 3};
+
+    BPlusTree *tree = new BPlusTree(order);
+    for (int i = 0; i < size; i++) {
+        tree->Insert(data[i], data[i]);
+        printf("\n\n======================\nAfter insert %d:\n======================\n\n", data[i]);
+        output_node_recursive(tree->root_);
+        fflush(stdout);
+    }
+
+    for (int i = 0; i < size; i++) {
+        ASSERT_TRUE(tree->HasKey(data[i]));
+        ASSERT_EQ(data[i], tree->FindValue(data[i]));
+    }
+
+    for (int i = 0; i < size; i++) {
+        tree->Remove(data[i]);
+        printf("\n\n======================\nAfter Remove %d:\n======================\n\n", data[i]);
+        output_node_recursive(tree->root_);
+        fflush(stdout);
+    }
+
+    for (int i = 0; i < size; i++) {
+        ASSERT_FALSE(tree->HasKey(data[i]));
+    }
 }
 
 TEST_F(BPlusTreeTest, OrderedInsert) {
-    const int size = 10000000;
+    const int size = 1000000;
     const int order = 5;
     char msg[100];
     sprintf(msg, "Insert %d Ordered integer", size);
@@ -80,7 +114,7 @@ TEST_F(BPlusTreeTest, OrderedInsert) {
 }
 
 TEST_F(BPlusTreeTest, RandomInsert) {
-    const int size = 10000000;
+    const int size = 1000000;
     const int order = 5;
     char msg[100];
     sprintf(msg, "Insert %d Random integer", size);
@@ -111,7 +145,7 @@ TEST(BPlusTreeDebug, RandomInsertDebug) {
 TEST(BPlusTreeDebug, SpecialDataInsertDebug) {
     const int size = 6;
     const int order = 5;
-    int data[] = {4,3,5,2,1,0};
+    int data[] = {4, 3, 5, 2, 1, 0};
 
     BPlusTree *tree = new BPlusTree(order);
     for (int i = 0; i < size; i++) {
@@ -183,7 +217,7 @@ void TestFunc(DataGenerator *data_generator, OperationFun *operation_func, int s
     gettimeofday(&ed, nullptr);
 
     timeval_str(st, ed, res);
-    printf("%s speed time: %s\n", msg, res);
+    printf("%s spend time: %s\n", msg, res);
 }
 
 void output_node_recursive(BPlusNode *root) {
@@ -220,3 +254,32 @@ void output_single_node(BPlusNode *node, int layer, int index) {
     }
     printf("\n");
 }
+
+void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data) {
+    for (auto item:data) {
+        tree->Insert(item.first, item.second);
+    }
+
+    int size = (int) data.size() / 100;
+
+    if (data.size() < 1000) {
+        size = 1000;
+    }
+
+    /* HasKey and FoundData */
+    for (int i = 0; i < size; i++) {
+        ASSERT_TRUE(tree->HasKey(data[i].first));
+        EXPECT_EQ(data[i].second, tree->FindValue(data[i].first));
+    }
+
+    /* Remove then Test HasKey */
+    for (int i = 0; i < size; i++) {
+        tree->Remove(data[i].first);
+    }
+
+    for (int i = 0; i < size; i++) {
+        EXPECT_FALSE(tree->HasKey(data[i].first));
+    }
+
+}
+

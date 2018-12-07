@@ -7,9 +7,11 @@
 
 #include <src/ordered_list/OrderedLinkList.h>
 #include "BPlusNode.h"
+#include <queue>
 #include "src/ordered_list/OrderedLinkList.h"
 #include <exception>
 #include <stdexcept>
+#include <pthread.h>
 
 class BPlusTree {
 public:
@@ -22,8 +24,6 @@ public:
 
     void Insert(int key, int value);
 
-    void Split(BPlusNode *node);
-
     bool HasKey(int key);
 
     int FindValue(int key);
@@ -32,7 +32,13 @@ public:
 
     void Remove(int key);
 
+    ~BPlusTree();
+
 private:
+    pthread_rwlock_t lock_;
+
+    void Split(BPlusNode *node);
+
     BPlusNode *FindLeaf(int key);
 
     void UpdateParent(BPlusNode *node);
@@ -93,9 +99,12 @@ BPlusTree::BPlusTree(int order) {
     this->order_ = order;
     root_ = new BPlusNode(Data::kLeaf);
     size_ = 1;
+    pthread_rwlock_init(&lock_, nullptr);
 }
 
 void BPlusTree::Insert(int key, int value) {
+    pthread_rwlock_wrlock(&lock_);
+
     BPlusNode *now = root_;
     while (now->type_ != Data::kLeaf) {
         ListNode *entry = now->list_->FindLowerBound(key);
@@ -109,6 +118,8 @@ void BPlusTree::Insert(int key, int value) {
     if (now->list_->size_ == order_) {
         Split(now);
     }
+
+    pthread_rwlock_unlock(&lock_);
 }
 
 BPlusNode *BPlusTree::GetLeftMostNode() const {
@@ -118,7 +129,12 @@ BPlusNode *BPlusTree::GetLeftMostNode() const {
 }
 
 bool BPlusTree::HasKey(int key) {
+    pthread_rwlock_rdlock(&lock_);
+
     BPlusNode *leaf = FindLeaf(key);
+
+    pthread_rwlock_unlock(&lock_);
+
     return leaf->list_->FindEqual(key) != nullptr;
 }
 
@@ -133,6 +149,8 @@ BPlusNode *BPlusTree::FindLeaf(int key) {
 }
 
 int BPlusTree::FindValue(int key) {
+    pthread_rwlock_rdlock(&lock_);
+
     static char msg[20];
     BPlusNode *leaf = FindLeaf(key);
     auto entry = leaf->list_->FindEqual(key);
@@ -141,12 +159,18 @@ int BPlusTree::FindValue(int key) {
         sprintf(msg, "The key %d does not exist\n", key);
         throw std::runtime_error(msg);
     }
+
+    pthread_rwlock_unlock(&lock_);
     return entry->data_.val_.value;
 }
 
 void BPlusTree::Remove(int key) {
+    pthread_rwlock_wrlock(&lock_);
+
     BPlusNode *leaf = FindLeaf(key);
     RemoveEntry(leaf, key);
+
+    pthread_rwlock_unlock(&lock_);
 }
 
 void BPlusTree::UpdateParent(BPlusNode *node) {
@@ -230,12 +254,15 @@ bool BPlusTree::MergeSibling(BPlusNode *node) {
     }
     /* check if become root */
     if (node->parent_ == root_ && node->parent_->list_->size_ <= order_ / 2) {
-        //TODO delete original root
+        delete root_;
         root_ = node;
+        node->parent_ = nullptr;
+        node->entry_in_parent_ = nullptr;
         size_--;
     } else {
         UpdateParent(node);
-        //TODO delete sibling
+        sibling->list_->head_ = sibling->list_->tail_ = nullptr;
+        delete sibling;
         RemoveEntry(node->parent_, node->entry_in_parent_->pre_);
     }
     return true;
@@ -243,6 +270,25 @@ bool BPlusTree::MergeSibling(BPlusNode *node) {
 
 bool BPlusTree::CanBorrow(BPlusNode *node) {
     return node != nullptr && node->list_->size_ > order_ / 2;
+}
+
+BPlusTree::~BPlusTree() {
+    pthread_rwlock_wrlock(&lock_);
+
+    std::queue<BPlusNode *> que;
+    que.push(root_);
+    while (!que.empty()) {
+        auto *now = que.front();
+        que.pop();
+        if (now->type_ == Data::kInternal) {
+            for (auto item = now->list_->head_; item; item = item->next_) {
+                que.push(item->data_.val_.child);
+            }
+        }
+        delete now;
+    }
+
+    pthread_rwlock_unlock(&lock_);
 }
 
 

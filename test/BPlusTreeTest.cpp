@@ -268,7 +268,7 @@ void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data) {
 
     /* HasKey and FoundData */
     for (int i = 0; i < size; i++) {
-        ASSERT_TRUE(tree->HasKey(data[i].first));
+        EXPECT_TRUE(tree->HasKey(data[i].first));
         EXPECT_EQ(data[i].second, tree->FindValue(data[i].first));
     }
 

@@ -17,13 +17,20 @@ public:
     int index;
     Data::DataType type_;
 
-    BPlusNode(Data::DataType type) {
-        list_ = new OrderedLinkList;
-        type_ = type;
-        left_sibling_ = right_sibling_ = parent_ = nullptr;
-        parent_ = nullptr;
-    }
-    
+    explicit BPlusNode(Data::DataType type);
+
+    ~BPlusNode();
 };
+
+BPlusNode::BPlusNode(Data::DataType type) {
+    list_ = new OrderedLinkList;
+    type_ = type;
+    left_sibling_ = right_sibling_ = parent_ = nullptr;
+    parent_ = nullptr;
+}
+
+BPlusNode::~BPlusNode() {
+    delete list_;
+}
 
 #endif //BPTDEMO_BPLUSNODE_H

@@ -35,6 +35,7 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
 endif ()
 
 include_directories(".")
+add_definitions(-D MULTITHREAD)
 
 add_executable(OrderedLinkListTest
         test/OrderedLinkListTest.cpp)
@@ -44,6 +45,9 @@ add_executable(SerializerTest
 
 add_executable(BPlusTreeTest
         test/BPlusTreeTest.cpp)
+
+add_executable(PerformanceTest
+        test/PerformanceTest.cpp)
 
 set(TESTS
         OrderedLinkListTest;
@@ -56,7 +60,7 @@ set(TESTS
 #target_compile_options(BPTreeTest PUBLIC ${GTEST_CFLAGS})
 
 foreach (x ${TESTS})
-    target_link_libraries(${x} gtest_main)
+    target_link_libraries(${x} gtest_main pthread)
 endforeach ()
 
 include(CTest)

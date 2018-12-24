@@ -35,7 +35,9 @@ public:
     ~BPlusTree();
 
 private:
+#ifdef MULTITHREAD
     pthread_rwlock_t lock_;
+#endif
 
     void Split(BPlusNode *node);
 
@@ -99,11 +101,15 @@ BPlusTree::BPlusTree(int order) {
     this->order_ = order;
     root_ = new BPlusNode(Data::kLeaf);
     size_ = 1;
+#ifdef MULTITHREAD
     pthread_rwlock_init(&lock_, nullptr);
+#endif
 }
 
 void BPlusTree::Insert(int key, int value) {
+#ifdef MULTITHREAD
     pthread_rwlock_wrlock(&lock_);
+#endif
 
     BPlusNode *now = root_;
     while (now->type_ != Data::kLeaf) {
@@ -119,7 +125,9 @@ void BPlusTree::Insert(int key, int value) {
         Split(now);
     }
 
+#ifdef MULTITHREAD
     pthread_rwlock_unlock(&lock_);
+#endif
 }
 
 BPlusNode *BPlusTree::GetLeftMostNode() const {
@@ -129,11 +137,15 @@ BPlusNode *BPlusTree::GetLeftMostNode() const {
 }
 
 bool BPlusTree::HasKey(int key) {
+#ifdef MULTITHREAD
     pthread_rwlock_rdlock(&lock_);
+#endif
 
     BPlusNode *leaf = FindLeaf(key);
 
+#ifdef MULTITHREAD
     pthread_rwlock_unlock(&lock_);
+#endif
 
     return leaf->list_->FindEqual(key) != nullptr;
 }
@@ -149,7 +161,9 @@ BPlusNode *BPlusTree::FindLeaf(int key) {
 }
 
 int BPlusTree::FindValue(int key) {
+#ifdef MULTITHREAD
     pthread_rwlock_rdlock(&lock_);
+#endif
 
     static char msg[20];
     BPlusNode *leaf = FindLeaf(key);
@@ -160,17 +174,23 @@ int BPlusTree::FindValue(int key) {
         throw std::runtime_error(msg);
     }
 
+#ifdef MULTITHREAD
     pthread_rwlock_unlock(&lock_);
+#endif
     return entry->data_.val_.value;
 }
 
 void BPlusTree::Remove(int key) {
+#ifdef MULTITHREAD
     pthread_rwlock_wrlock(&lock_);
+#endif
 
     BPlusNode *leaf = FindLeaf(key);
     RemoveEntry(leaf, key);
 
+#ifdef MULTITHREAD
     pthread_rwlock_unlock(&lock_);
+#endif
 }
 
 void BPlusTree::UpdateParent(BPlusNode *node) {
@@ -273,7 +293,9 @@ bool BPlusTree::CanBorrow(BPlusNode *node) {
 }
 
 BPlusTree::~BPlusTree() {
+#ifdef MULTITHREAD
     pthread_rwlock_wrlock(&lock_);
+#endif
 
     std::queue<BPlusNode *> que;
     que.push(root_);
@@ -288,7 +310,9 @@ BPlusTree::~BPlusTree() {
         delete now;
     }
 
+#ifdef MULTITHREAD
     pthread_rwlock_unlock(&lock_);
+#endif
 }
 
 

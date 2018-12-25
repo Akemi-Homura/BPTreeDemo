@@ -81,7 +81,6 @@ public:
      */
     void Split(int index, OrderedLinkList *list);
 
-    void Split(ListNode *split_node, OrderedLinkList *list);
 
     ListNode *FindEqual(int key);
 
@@ -95,6 +94,8 @@ public:
     ListNode *FindFirstBigger(int key);
 
 private:
+    void Split(ListNode *split_node, OrderedLinkList *list);
+
     ListNode *InsertBefore(ListNode *node, Data data);
 
     ListNode *InsertAfter(ListNode *node, Data data);

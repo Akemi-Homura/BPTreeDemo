@@ -13,7 +13,7 @@
 class BPlusTreeTest : public ::testing::Test {
 protected:
     virtual void SetUp() {
-        tree = new BPlusTree(10);
+        tree = new BPlusTree(5);
     }
 
     virtual void TearDown() {
@@ -22,6 +22,28 @@ protected:
 
     BPlusTree *tree;
 };
+
+
+
+typedef void (OperationFun)(BPlusTree *, std::vector<std::pair<int, int> >);
+
+typedef std::vector<std::pair<int, int> > (DataGenerator)(int size);
+
+std::vector<std::pair<int, int>> fill_random_num(int size);
+
+std::vector<std::pair<int, int>> fill_ordered_num(int size);
+
+void TestFunc(DataGenerator *data_generator, OperationFun *operation_func, int size, int order, const char *msg);
+
+void InsertFunc(BPlusTree *tree, std::vector<std::pair<int, int> > data);
+
+void output_node_recursive(BPlusNode *root);
+
+void output_single_node(BPlusNode *node, int layer, int index);
+
+void pr_times(const char *msg, clock_t real, struct tms *tmsstart, struct tms *tmsend);
+
+void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data);
 
 TEST_F(BPlusTreeTest, SimpleTest) {
     for (int i = 0; i < 10; i++) {
@@ -43,26 +65,6 @@ TEST_F(BPlusTreeTest, SimpleTest) {
     tree->Remove(9);
     EXPECT_FALSE(tree->HasKey(9));
 }
-
-typedef void (OperationFun)(BPlusTree *, std::vector<std::pair<int, int> >);
-
-typedef std::vector<std::pair<int, int> > (DataGenerator)(int size);
-
-std::vector<std::pair<int, int>> fill_random_num(int size);
-
-std::vector<std::pair<int, int>> fill_ordered_num(int size);
-
-void TestFunc(DataGenerator *data_generator, OperationFun *operation_func, int size, int order, const char *msg);
-
-void InsertFunc(BPlusTree *tree, std::vector<std::pair<int, int> > data);
-
-void output_node_recursive(BPlusNode *root);
-
-void output_single_node(BPlusNode *node, int layer, int index);
-
-void pr_times(const char *msg, clock_t real, struct tms *tmsstart, struct tms *tmsend);
-
-void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data);
 
 TEST_F(BPlusTreeTest, SynthesizeTest) {
     const int size = 1000000;
@@ -103,16 +105,16 @@ TEST(BPlusTreeDebug, SynthesizeDebug) {
 }
 
 TEST_F(BPlusTreeTest, OrderedInsert) {
-    const int size = 10000000;
-    const int order = 5;
+    const int size = 100000;
+    const int order = 7;
     char msg[100];
     sprintf(msg, "Insert %d Ordered integer", size);
     TestFunc(fill_ordered_num, InsertFunc, size, order, msg);
 }
 
 TEST_F(BPlusTreeTest, RandomInsert) {
-    const int size = 10000000;
-    const int order = 5;
+    const int size = 100000;
+    const int order = 7;
     char msg[100];
     sprintf(msg, "Insert %d Random integer", size);
     TestFunc(fill_random_num, InsertFunc, size, order, msg);

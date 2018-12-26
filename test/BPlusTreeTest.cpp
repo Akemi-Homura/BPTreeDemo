@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <sys/times.h>
 #include <queue>
+#include <src/ordered_array/OrderedArray.h>
 
 
 class BPlusTreeTest : public ::testing::Test {
@@ -24,7 +25,6 @@ protected:
 };
 
 
-
 typedef void (OperationFun)(BPlusTree *, std::vector<std::pair<int, int> >);
 
 typedef std::vector<std::pair<int, int> > (DataGenerator)(int size);
@@ -33,7 +33,8 @@ std::vector<std::pair<int, int>> fill_random_num(int size);
 
 std::vector<std::pair<int, int>> fill_ordered_num(int size);
 
-void TestFunc(DataGenerator *data_generator, OperationFun *operation_func, int size, int order, const char *msg);
+void TestFunc(DataGenerator *data_generator, OperationFun *operation_func, int size, int order, const char *msg,
+              bool save_data_flag = false);
 
 void InsertFunc(BPlusTree *tree, std::vector<std::pair<int, int> > data);
 
@@ -45,9 +46,13 @@ void pr_times(const char *msg, clock_t real, struct tms *tmsstart, struct tms *t
 
 void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data);
 
+void SaveData(std::vector<std::pair<int, int>> data);
+
 TEST_F(BPlusTreeTest, SimpleTest) {
     for (int i = 0; i < 10; i++) {
         tree->Insert(i, i);
+        printf("\n\n======================\nAfter insert %d:\n======================\n\n", i);
+        output_node_recursive(tree->root_);
     }
     EXPECT_EQ(4, tree->size_);
 
@@ -75,9 +80,9 @@ TEST_F(BPlusTreeTest, SynthesizeTest) {
 }
 
 TEST(BPlusTreeDebug, SynthesizeDebug) {
-    const int size = 11;
+    const int size = 15;
     const int order = 5;
-    int data[] = {8, 7, 6, 9, 10, 0, 1, 4, 5, 2, 3};
+    int data[] = {6, 12, 3, 4, 11, 0, 8, 14, 5, 7, 2, 13, 10, 1, 9};
 
     BPlusTree *tree = new BPlusTree(order);
     for (int i = 0; i < size; i++) {
@@ -97,15 +102,13 @@ TEST(BPlusTreeDebug, SynthesizeDebug) {
         printf("\n\n======================\nAfter Remove %d:\n======================\n\n", data[i]);
         output_node_recursive(tree->root_);
         fflush(stdout);
-    }
-
-    for (int i = 0; i < size; i++) {
         ASSERT_FALSE(tree->HasKey(data[i]));
+
     }
 }
 
 TEST_F(BPlusTreeTest, OrderedInsert) {
-    const int size = 100000;
+    const int size = 10000000;
     const int order = 7;
     char msg[100];
     sprintf(msg, "Insert %d Ordered integer", size);
@@ -113,7 +116,7 @@ TEST_F(BPlusTreeTest, OrderedInsert) {
 }
 
 TEST_F(BPlusTreeTest, RandomInsert) {
-    const int size = 100000;
+    const int size = 10000000;
     const int order = 7;
     char msg[100];
     sprintf(msg, "Insert %d Random integer", size);
@@ -187,10 +190,15 @@ std::vector<std::pair<int, int>> fill_ordered_num(int size) {
     return data;
 }
 
-void TestFunc(DataGenerator *data_generator, OperationFun *operation_func, int size, int order, const char *msg) {
+void TestFunc(DataGenerator *data_generator, OperationFun *operation_func, int size, int order, const char *msg,
+              bool save_data_flag) {
     BPlusTree *tree = new BPlusTree(order);
 
     std::vector<std::pair<int, int> > data = data_generator(size);
+    if (save_data_flag) {
+        SaveData(data);
+    }
+
     struct tms tmsstart, tmsend;
     clock_t start, end;
 
@@ -199,6 +207,17 @@ void TestFunc(DataGenerator *data_generator, OperationFun *operation_func, int s
     end = times(&tmsend);
 
     pr_times(msg, end - start, &tmsstart, &tmsend);
+}
+
+void SaveData(std::vector<std::pair<int, int>> data) {
+    FILE *file = fopen("data.txt", "w");
+    fprintf(file, "%lu\n", data.size());
+    for (int i = 0; i < data.size(); i++) {
+        fprintf(file, "%d%c", data[i].first, ",\n"[i == data.size() - 1]);
+    }
+    for (int i = 0; i < data.size(); i++) {
+        fprintf(file, "%d%c", data[i].second, ",\n"[i == data.size() - 1]);
+    }
 }
 
 void pr_times(const char *msg, clock_t real, struct tms *tmsstart, struct tms *tmsend) {
@@ -236,8 +255,8 @@ void output_node_recursive(BPlusNode *root) {
         }
         output_single_node(now, layer, index);
         if (now->type_ == Data::kInternal) {
-            for (auto t = now->list_->head_; t != nullptr; t = t->next_) {
-                q.push(std::pair<BPlusNode *, int>(t->data_.val_.child, layer + 1));
+            for (int i = 0; i < now->list_.size_; i++) {
+                q.push(std::pair<BPlusNode *, int>(now->list_[i].val_.child, layer + 1));
             }
         }
     }
@@ -245,11 +264,11 @@ void output_node_recursive(BPlusNode *root) {
 
 void output_single_node(BPlusNode *node, int layer, int index) {
     printf("node_%d_%d %s:\n", layer, index, node->type_ == Data::kInternal ? "Internal" : "Leaf");
-    for (auto now = node->list_->head_; now != nullptr; now = now->next_) {
+    for (int i = 0; i < node->list_.size_; i++) {
         if (node->type_ == Data::kInternal) {
-            printf("%d ", now->data_.key_);
+            printf("%d ", node->list_[i].key_);
         } else {
-            printf("(%d %d) ", now->data_.key_, now->data_.val_.value);
+            printf("(%d %d) ", node->list_[i].key_, node->list_[i].val_.value);
         }
     }
     printf("\n");
@@ -261,11 +280,7 @@ void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data) {
         tree->Insert(item.first, item.second);
     }
 
-    int size = (int) data.size() / 100;
-
-    if (data.size() < 1000) {
-        size = 1000;
-    }
+    int size = (int) data.size();
 
     /* HasKey and FoundData */
     for (int i = 0; i < size; i++) {
@@ -276,10 +291,6 @@ void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data) {
     /* Remove then Test HasKey */
     for (int i = 0; i < size; i++) {
         tree->Remove(data[i].first);
+        ASSERT_FALSE(tree->HasKey(data[i].first));
     }
-
-    for (int i = 0; i < size; i++) {
-        EXPECT_FALSE(tree->HasKey(data[i].first));
-    }
-
 }

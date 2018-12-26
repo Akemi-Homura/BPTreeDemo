@@ -39,7 +39,7 @@ include_directories(".")
 add_compile_options(-O3)
 
 add_executable(OrderedLinkListTest
-        test/OrderedLinkListTest.cpp)
+        test/OrderedArrayTest.cpp)
 
 add_executable(SerializerTest
         test/SerializerTest.cpp)

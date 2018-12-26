@@ -7,7 +7,7 @@
 
 #include "src/bpt/BPlusTree.h"
 #include "SerializeHelperAbstract.h"
-#include "src/ordered_list/OrderedLinkList.h"
+#include "src/ordered_array/OrderedArray.h"
 #include <queue>
 
 struct BPlusNodeModel {
@@ -104,7 +104,7 @@ BPlusNodeModel TreeStructureSerializer::get_one_node_model(FILE *fp) {
 BPlusNode *
 TreeStructureSerializer::BuildNodeRecursiveFromNodeModelArray(BPlusNodeModel *mode_array, int index) {
     BPlusNodeModel model = mode_array[index];
-    BPlusNode *res = new BPlusNode(model.type_ == TInternal ? Data::kInternal : Data::kLeaf);
+    BPlusNode *res = new BPlusNode(model.type_ == TInternal ? Data::kInternal : Data::kLeaf, 0);
 
     for (int i = 0; i < model.child_size_; i++) {
         Data data;

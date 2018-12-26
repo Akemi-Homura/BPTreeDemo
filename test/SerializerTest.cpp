@@ -5,7 +5,7 @@
 #include "src/serializer/SimpleSerializer.h"
 #include "src/bpt/BPlusTree.h"
 #include "src/serializer/TreeStructureSerializer.h"
-#include "src/ordered_list/OrderedLinkList.h"
+#include "src/ordered_array/OrderedArray.h"
 #include <gtest/gtest.h>
 
 typedef void (FuncTreeCompare)(BPlusTree *, BPlusTree *);

@@ -63,6 +63,7 @@ bool TreeStructureSerializer::Deserialize(BPlusTree *tree, const char *filename)
 
     std::queue<BPlusNode *> que;
     que.push(root);
+    BPlusNode *leaf_p = nullptr;
     while (!que.empty()) {
         for (int i = 0; i < que.size(); i++) {
             BPlusNode *now = que.front();
@@ -73,6 +74,12 @@ bool TreeStructureSerializer::Deserialize(BPlusTree *tree, const char *filename)
                     now->list_[j].val_.child = node;
                     if (node->type_ == Data::kInternal) {
                         que.push(node);
+                    }else{
+                        if (leaf_p != nullptr){
+                            leaf_p->right_sibling_ = node;
+                            node->left_sibling_ = leaf_p;
+                        }
+                        leaf_p = node;
                     }
                 }
             }

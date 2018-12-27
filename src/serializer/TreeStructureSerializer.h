@@ -33,18 +33,16 @@ bool TreeStructureSerializer::Serialize(const BPlusTree *tree, const char *filen
     std::queue<BPlusNode *> que;
     que.push(tree->root_);
     while (!que.empty()) {
-        for (int i = 0; i < que.size(); i++) {
-            BPlusNode *now = que.front();
-            que.pop();
-            fprintf(fp, "%d %d\n", now->list_.size_, now->type_ == Data::kInternal ? TInternal : TLeaf);
-            for (int j = 0; j < now->list_.size_; j++) {
-                if (now->type_ == Data::kInternal) {
-                    fprintf(fp, "%d%c", now->list_[j].key_, " \n"[j == now->list_.size_ - 1]);
-                    que.push(now->list_[j].val_.child);
-                } else {
-                    fprintf(fp, "(%d,%d)%c", now->list_[j].key_, now->list_[j].val_.value,
-                            " \n"[j == now->list_.size_ - 1]);
-                }
+        BPlusNode *now = que.front();
+        que.pop();
+        fprintf(fp, "%d %d\n", now->list_.size_, now->type_ == Data::kInternal ? TInternal : TLeaf);
+        for (int j = 0; j < now->list_.size_; j++) {
+            if (now->type_ == Data::kInternal) {
+                fprintf(fp, "%d%c", now->list_[j].key_, " \n"[j == now->list_.size_ - 1]);
+                que.push(now->list_[j].val_.child);
+            } else {
+                fprintf(fp, "(%d,%d)%c", now->list_[j].key_, now->list_[j].val_.value,
+                        " \n"[j == now->list_.size_ - 1]);
             }
         }
     }
@@ -65,7 +63,8 @@ bool TreeStructureSerializer::Deserialize(BPlusTree *tree, const char *filename)
     que.push(root);
     BPlusNode *leaf_p = nullptr;
     while (!que.empty()) {
-        for (int i = 0; i < que.size(); i++) {
+        const int size = (int)que.size();
+        for (int i = 0; i < size; i++) {
             BPlusNode *now = que.front();
             que.pop();
             if (now->type_ == Data::kInternal) {
@@ -74,8 +73,8 @@ bool TreeStructureSerializer::Deserialize(BPlusTree *tree, const char *filename)
                     now->list_[j].val_.child = node;
                     if (node->type_ == Data::kInternal) {
                         que.push(node);
-                    }else{
-                        if (leaf_p != nullptr){
+                    } else {
+                        if (leaf_p != nullptr) {
                             leaf_p->right_sibling_ = node;
                             node->left_sibling_ = leaf_p;
                         }

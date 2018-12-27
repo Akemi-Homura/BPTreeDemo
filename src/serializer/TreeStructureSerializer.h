@@ -63,23 +63,20 @@ bool TreeStructureSerializer::Deserialize(BPlusTree *tree, const char *filename)
     que.push(root);
     BPlusNode *leaf_p = nullptr;
     while (!que.empty()) {
-        const int size = (int)que.size();
-        for (int i = 0; i < size; i++) {
-            BPlusNode *now = que.front();
-            que.pop();
-            if (now->type_ == Data::kInternal) {
-                for (int j = 0; j < now->list_.size_; j++) {
-                    auto *node = ReadNode(fp, order);
-                    now->list_[j].val_.child = node;
-                    if (node->type_ == Data::kInternal) {
-                        que.push(node);
-                    } else {
-                        if (leaf_p != nullptr) {
-                            leaf_p->right_sibling_ = node;
-                            node->left_sibling_ = leaf_p;
-                        }
-                        leaf_p = node;
+        BPlusNode *now = que.front();
+        que.pop();
+        if (now->type_ == Data::kInternal) {
+            for (int j = 0; j < now->list_.size_; j++) {
+                auto *node = ReadNode(fp, order);
+                now->list_[j].val_.child = node;
+                if (node->type_ == Data::kInternal) {
+                    que.push(node);
+                } else {
+                    if (leaf_p != nullptr) {
+                        leaf_p->right_sibling_ = node;
+                        node->left_sibling_ = leaf_p;
                     }
+                    leaf_p = node;
                 }
             }
         }

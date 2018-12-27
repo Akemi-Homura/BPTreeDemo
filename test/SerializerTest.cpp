@@ -7,6 +7,7 @@
 #include "src/serializer/TreeStructureSerializer.h"
 #include "src/ordered_array/OrderedArray.h"
 #include <gtest/gtest.h>
+#include <src/ordered_array/OrderedArray.h>
 
 typedef void (FuncTreeCompare)(BPlusTree *, BPlusTree *);
 
@@ -14,7 +15,7 @@ FuncTreeCompare CompareData;
 
 FuncTreeCompare CompareStructure;
 
-void get_next_entry(BPlusNode *&node, ListNode *&entry);
+void get_next_entry(BPlusNode *&node, Data &data, int &index);
 
 template<class T>
 void com_ser_deser(int order, int size, SerializeHelperAbstract<T> *serializer, FuncTreeCompare *Comparator);
@@ -27,7 +28,7 @@ TEST(SimpleBPlusTest, SmallData) {
 }
 
 TEST(SimpleBPlusTest, MoreData) {
-    com_ser_deser(5, 100000, new SimpleSerializer(), CompareData);
+    com_ser_deser(5, 1000000, new SimpleSerializer(), CompareData);
 }
 
 TEST(TSSerializerTest, SmallData) {
@@ -35,25 +36,22 @@ TEST(TSSerializerTest, SmallData) {
 }
 
 TEST(TSSerializerTest, MoreData) {
-    com_ser_deser(5, 100000, new TreeStructureSerializer(), CompareStructure);
+    com_ser_deser(5, 1000000, new TreeStructureSerializer(), CompareStructure);
 }
 
 void CompareData(BPlusTree *t1, BPlusTree *t2) {
-    BPlusNode *t1_leaf_head = t1->GetLeftMostNode();
-    BPlusNode *t2_leaf_head = t2->GetLeftMostNode();
-    ListNode *t1_now_entry = t1_leaf_head->list_->head_;
-    ListNode *t2_now_entry = t2_leaf_head->list_->head_;
-    while (t1_leaf_head != nullptr && t2_leaf_head != nullptr) {
-        EXPECT_EQ(t1_now_entry->data_.key_, t2_now_entry->data_.key_);
-        EXPECT_EQ(t1_now_entry->data_.val_.value, t2_now_entry->data_.val_.value);
-
-        get_next_entry(t1_leaf_head, t1_now_entry);
-        get_next_entry(t2_leaf_head, t2_now_entry);
+    BPlusNode *n1 = t1->GetLeftMostNode();
+    BPlusNode *n2 = t2->GetLeftMostNode();
+    int in1 = 0, in2 = 0;
+    Data d1, d2;
+    while (in1 != n1->list_.size_ - 1 && in2 != n2->list_.size_ - 1) {
+        get_next_entry(n1, d1, in1);
+        get_next_entry(n2, d2, in2);
+        EXPECT_EQ(d1.key_, d2.key_);
+        EXPECT_EQ(d1.val_.value, d2.val_.value);
     }
-    EXPECT_EQ(t1_leaf_head, nullptr);
-    EXPECT_EQ(t2_leaf_head, nullptr);
-    EXPECT_EQ(t1_now_entry, nullptr);
-    EXPECT_EQ(t2_now_entry, nullptr);
+    EXPECT_EQ(in1, n1->list_.size_ - 1);
+    EXPECT_EQ(in2, n2->list_.size_ - 1);
 }
 
 void CompareStructure(BPlusTree *t1, BPlusTree *t2) {
@@ -64,25 +62,24 @@ void CompareStructure(BPlusTree *t1, BPlusTree *t2) {
 
 void CompareNodeRecursive(BPlusNode *n1, BPlusNode *n2) {
     ASSERT_EQ(n1->type_, n2->type_);
-    ASSERT_EQ(n1->list_->size_, n2->list_->size_);
-    auto now1 = n1->list_->head_, now2 = n2->list_->head_;
-    for (; now1 != nullptr && now2 != nullptr; now1 = now1->next_, now2 = now2->next_) {
-        ASSERT_EQ(now1->data_.key_, now2->data_.key_);
+    ASSERT_EQ(n1->list_.size_, n2->list_.size_);
+    for (int i=0;i<n1->list_.size_;i++) {
+        ASSERT_EQ(n1->list_[i].key_, n2->list_[i].key_);
         if (n1->type_ == Data::kInternal) {
-            CompareNodeRecursive(now1->data_.val_.child, now2->data_.val_.child);
+            CompareNodeRecursive(n1->list_[i].val_.child, n2->list_[i].val_.child);
         } else {
-            ASSERT_EQ(now1->data_.val_.value, now2->data_.val_.value);
+            ASSERT_EQ(n1->list_[i].val_.value, n2->list_[i].val_.value);
         }
     }
-    ASSERT_EQ(nullptr, now1);
-    ASSERT_EQ(nullptr, now2);
 }
 
-void get_next_entry(BPlusNode *&node, ListNode *&entry) {
-    entry = entry->next_;
-    if (entry == nullptr) {
+void get_next_entry(BPlusNode *&node, Data &data, int &index) {
+    data = node->list_[index++];
+    if (index == node->list_.size_) {
         node = node->right_sibling_;
-        if (node != nullptr) entry = node->list_->head_;
+        if (node != nullptr) {
+            index = 0;
+        }
     }
 }
 

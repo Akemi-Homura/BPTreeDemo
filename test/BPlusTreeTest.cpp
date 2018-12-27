@@ -46,7 +46,18 @@ void pr_times(const char *msg, clock_t real, struct tms *tmsstart, struct tms *t
 
 void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data);
 
+void MultiThreadFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data);
+
 void SaveData(std::vector<std::pair<int, int>> data);
+
+void LoopSynthesize(BPlusTree *tree, std::vector<std::pair<int, int>> data);
+
+void *insert_then_remove(void *args);
+
+struct arg_set {
+    BPlusTree *tree;
+    std::vector<std::pair<int, int>> data;
+};
 
 TEST_F(BPlusTreeTest, SimpleTest) {
     for (int i = 0; i < 10; i++) {
@@ -79,6 +90,22 @@ TEST_F(BPlusTreeTest, SynthesizeTest) {
     TestFunc(fill_random_num, SynthesizeFunc, size, order, msg);
 }
 
+TEST_F(BPlusTreeTest, MemeoryUseage){
+    const int size = 1000000;
+    const int order = 5;
+    char msg[100];
+    sprintf(msg, "Memory usage, %d data", size);
+    TestFunc(fill_random_num, LoopSynthesize, size, order, msg);
+}
+
+TEST_F(BPlusTreeTest, Multithread) {
+    const int size = 1000000;
+    const int order = 5;
+    char msg[100];
+    sprintf(msg, "Multi-thread Test, %d data", size);
+    TestFunc(fill_random_num, MultiThreadFunc, size, order, msg);
+}
+
 TEST(BPlusTreeDebug, SynthesizeDebug) {
     const int size = 15;
     const int order = 5;
@@ -109,7 +136,7 @@ TEST(BPlusTreeDebug, SynthesizeDebug) {
 
 TEST_F(BPlusTreeTest, OrderedInsert) {
     const int size = 10000000;
-    const int order = 7;
+    const int order = 5;
     char msg[100];
     sprintf(msg, "Insert %d Ordered integer", size);
     TestFunc(fill_ordered_num, InsertFunc, size, order, msg);
@@ -276,14 +303,11 @@ void output_single_node(BPlusNode *node, int layer, int index) {
 
 
 void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data) {
-    for (auto item:data) {
-        tree->Insert(item.first, item.second);
-    }
-
     int size = (int) data.size();
 
     /* HasKey and FoundData */
     for (int i = 0; i < size; i++) {
+        tree->Insert(data[i].first, data[i].second);
         EXPECT_TRUE(tree->HasKey(data[i].first));
         EXPECT_EQ(data[i].second, tree->FindValue(data[i].first));
     }
@@ -292,5 +316,56 @@ void SynthesizeFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data) {
     for (int i = 0; i < size; i++) {
         tree->Remove(data[i].first);
         ASSERT_FALSE(tree->HasKey(data[i].first));
+    }
+}
+
+void MultiThreadFunc(BPlusTree *tree, std::vector<std::pair<int, int>> data) {
+    size_t left_size = data.size() / 2;
+    std::vector<std::pair<int, int>> d1(data.begin(), data.begin() + left_size);
+    std::vector<std::pair<int, int>> d2(data.begin() + left_size, data.end());
+
+    pthread_t t1, t2;
+    arg_set arg1, arg2;
+    arg1.tree = tree;
+    arg1.data = d1;
+
+    arg2.tree = tree;
+    arg2.data = d2;
+
+    pthread_create(&t1, nullptr, insert_then_remove, &arg1);
+    pthread_create(&t2, nullptr, insert_then_remove, &arg2);
+
+    pthread_join(t1, nullptr);
+    pthread_join(t2, nullptr);
+}
+
+void *insert_then_remove(void *args) {
+    auto *arg = (arg_set *) args;
+    BPlusTree *tree = arg->tree;
+    std::vector<std::pair<int, int>> data = arg->data;
+    const int size = int(data.size());
+
+    /* HasKey and FoundData */
+    for (int i = 0; i < size; i++) {
+        tree->Insert(data[i].first, data[i].second);
+        EXPECT_TRUE(tree->HasKey(data[i].first));
+        EXPECT_EQ(data[i].second, tree->FindValue(data[i].first));
+    }
+
+    /* Remove then Test HasKey */
+    for (int i = 0; i < size; i++) {
+        tree->Remove(data[i].first);
+        EXPECT_FALSE(tree->HasKey(data[i].first));
+    }
+}
+
+void LoopSynthesize(BPlusTree *tree, std::vector<std::pair<int, int>> data) {
+    while (1){
+        for(auto &item: data){
+            tree->Insert(item.first,item.second);
+        }
+        for(auto &item: data){
+            tree->Remove(item.first);
+        }
     }
 }

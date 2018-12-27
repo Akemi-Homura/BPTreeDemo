@@ -35,7 +35,7 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
 endif ()
 
 include_directories(".")
-#add_definitions(-D MULTITHREAD)
+add_definitions(-D MULTITHREAD)
 add_compile_options(-O3)
 
 add_executable(OrderedLinkListTest
@@ -46,9 +46,6 @@ add_executable(SerializerTest
 
 add_executable(BPlusTreeTest
         test/BPlusTreeTest.cpp)
-
-add_executable(PerformanceTest
-        test/PerformanceTest.cpp)
 
 set(TESTS
         OrderedLinkListTest;

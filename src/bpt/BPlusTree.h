@@ -86,9 +86,6 @@ BPlusTree::BPlusTree(int order) {
 }
 
 void BPlusTree::Insert(int key, int value, BPlusNode *now) {
-#ifdef MULTITHREAD
-    pthread_rwlock_wrlock(&lock_);
-#endif
     if (now->type_ != Data::kLeaf) {
         int index = now->list_.FindLowerBound(key);
         if (index == now->list_.size_) {
@@ -108,16 +105,9 @@ void BPlusTree::Insert(int key, int value, BPlusNode *now) {
         root_->list_.Insert(Data(now->list_.back().key_, now));
         Split(root_, 0);
     }
-
-#ifdef MULTITHREAD
-    pthread_rwlock_unlock(&lock_);
-#endif
 }
 
 void BPlusTree::Remove(int key, BPlusNode *now) {
-#ifdef MULTITHREAD
-    pthread_rwlock_wrlock(&lock_);
-#endif
     if (now->type_ != Data::kLeaf) {
         int index = now->list_.FindLowerBound(key);
         if (index == now->list_.size_) {
@@ -138,9 +128,6 @@ void BPlusTree::Remove(int key, BPlusNode *now) {
     } else {
         now->list_.Remove(key);
     }
-#ifdef MULTITHREAD
-    pthread_rwlock_unlock(&lock_);
-#endif
 }
 
 BPlusNode *BPlusTree::GetLeftMostNode() const {
@@ -155,12 +142,12 @@ bool BPlusTree::HasKey(int key) {
 #endif
 
     BPlusNode *leaf = FindLeaf(key);
+    const bool res = leaf->list_.FindEqual(key) != -1;
 
 #ifdef MULTITHREAD
     pthread_rwlock_unlock(&lock_);
 #endif
-
-    return leaf->list_.FindEqual(key) != -1;
+    return res;
 }
 
 BPlusNode *BPlusTree::FindLeaf(int key) {
@@ -186,11 +173,12 @@ int BPlusTree::FindValue(int key) {
         sprintf(msg, "The key %d does not exist\n", key);
         throw std::runtime_error(msg);
     }
+    const int res = leaf->list_[index].val_.value;
 
 #ifdef MULTITHREAD
     pthread_rwlock_unlock(&lock_);
 #endif
-    return leaf->list_[index].val_.value;
+    return res;
 }
 
 bool BPlusTree::BorrowFromSibling(BPlusNode *fa, int child_index) {
@@ -267,11 +255,23 @@ BPlusTree::~BPlusTree() {
 }
 
 void BPlusTree::Insert(int key, int value) {
+#ifdef MULTITHREAD
+    pthread_rwlock_wrlock(&lock_);
+#endif
     Insert(key, value, root_);
+#ifdef MULTITHREAD
+    pthread_rwlock_unlock(&lock_);
+#endif
 }
 
 void BPlusTree::Remove(int key) {
+#ifdef MULTITHREAD
+    pthread_rwlock_wrlock(&lock_);
+#endif
     Remove(key, root_);
+#ifdef MULTITHREAD
+    pthread_rwlock_unlock(&lock_);
+#endif
 }
 
 

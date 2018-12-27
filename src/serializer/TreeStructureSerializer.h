@@ -9,24 +9,7 @@
 #include "SerializeHelperAbstract.h"
 #include "src/ordered_array/OrderedArray.h"
 #include <queue>
-
-struct BPlusNodeModel {
-    int index_;
-    int type_;
-    int child_size_;
-    int *key_;
-    int *values_;
-
-    BPlusNodeModel(int type, int index, int child_size) {
-        this->index_ = index;
-        this->type_ = type;
-        this->child_size_ = child_size;
-        values_ = new int[child_size];
-        key_ = new int[child_size];
-    }
-
-    BPlusNodeModel() : BPlusNodeModel(0, 0, 0) {}
-};
+#include <src/ordered_array/OrderedArray.h>
 
 class TreeStructureSerializer : public SerializeHelperAbstract<BPlusTree> {
 public:
@@ -37,107 +20,86 @@ public:
     bool Deserialize(BPlusTree *tree, const char *filename) override;
 
 private:
-    const static int TInternal = 0;
-    const static int TLeaf = 1;
+    static const int TInternal = 0;
+    static const int TLeaf = 1;
 
-    void DFS(FILE *fp, BPlusNode *node, int &index);
-
-    BPlusNodeModel get_one_node_model(FILE *fp);
-
-    BPlusNode *BuildNodeRecursiveFromNodeModelArray(BPlusNodeModel *mode_array, int index);
-
-    static void PrintNode(FILE *fp, const BPlusNode *node);
-
-    static void PrintNodeRecursive(FILE *fp, BPlusNode *node);
+    BPlusNode *ReadNode(FILE *fp, int order);
 };
-
-void TreeStructureSerializer::DFS(FILE *fp, BPlusNode *node, int &index) {
-    node->index = index;
-    if (node->type_ == Data::kInternal) {
-        for (auto now = node->list_->head_; now != nullptr; now = now->next_) {
-            DFS(fp, now->data_.val_.child, ++index);
-        }
-    }
-}
 
 
 bool TreeStructureSerializer::Serialize(const BPlusTree *tree, const char *filename) {
     FILE *fp = fopen(filename, "w");
     fprintf(fp, "%d %d\n", tree->order_, tree->size_);
-    int index = 0;
-    DFS(fp, tree->root_, index);
-    PrintNodeRecursive(fp, tree->root_);
+    std::queue<BPlusNode *> que;
+    que.push(tree->root_);
+    while (!que.empty()) {
+        for (int i = 0; i < que.size(); i++) {
+            BPlusNode *now = que.front();
+            que.pop();
+            fprintf(fp, "%d %d\n", now->list_.size_, now->type_ == Data::kInternal ? TInternal : TLeaf);
+            for (int j = 0; j < now->list_.size_; j++) {
+                if (now->type_ == Data::kInternal) {
+                    fprintf(fp, "%d%c", now->list_[j].key_, " \n"[j == now->list_.size_ - 1]);
+                    que.push(now->list_[j].val_.child);
+                } else {
+                    fprintf(fp, "(%d,%d)%c", now->list_[j].key_, now->list_[j].val_.value,
+                            " \n"[j == now->list_.size_ - 1]);
+                }
+            }
+        }
+    }
     fclose(fp);
     return true;
 }
 
 bool TreeStructureSerializer::Deserialize(BPlusTree *tree, const char *filename) {
     FILE *fp = fopen(filename, "r");
-    int node_size, order;
-    fscanf(fp, "%d%d", &order, &node_size);
+    int order, size;
+    fscanf(fp, "%d %d", &order, &size);
     tree->order_ = order;
-    tree->size_ = node_size;
+    tree->size_ = size;
+    BPlusNode *root = ReadNode(fp, order);
+    tree->root_ = root;
 
-    BPlusNodeModel *model_array = new BPlusNodeModel[node_size * sizeof(BPlusNodeModel)];
-    for (int i = 0; i < node_size; i++) {
-        BPlusNodeModel model = get_one_node_model(fp);
-        model_array[model.index_] = model;
+    std::queue<BPlusNode *> que;
+    que.push(root);
+    while (!que.empty()) {
+        for (int i = 0; i < que.size(); i++) {
+            BPlusNode *now = que.front();
+            que.pop();
+            if (now->type_ == Data::kInternal) {
+                for (int j = 0; j < now->list_.size_; j++) {
+                    auto *node = ReadNode(fp, order);
+                    now->list_[j].val_.child = node;
+                    if (node->type_ == Data::kInternal) {
+                        que.push(node);
+                    }
+                }
+            }
+        }
     }
-    tree->root_ = BuildNodeRecursiveFromNodeModelArray(model_array, 0);
-    fclose(fp);
     return true;
 }
 
-BPlusNodeModel TreeStructureSerializer::get_one_node_model(FILE *fp) {
-    int node_type, node_index, child_size;
-    fscanf(fp, "%d%d%d\n", &node_type, &node_index, &child_size);
-    BPlusNodeModel res(node_type, node_index, child_size);
-    for (int i = 0; i < child_size; i++) {
-        int key, value;
-        fscanf(fp, i == child_size - 1 ? "(%d,%d) " : "(%d,%d)\n", &key, &value);
-        res.key_[i] = key;
-        res.values_[i] = value;
-    }
-    return res;
-}
-
-BPlusNode *
-TreeStructureSerializer::BuildNodeRecursiveFromNodeModelArray(BPlusNodeModel *mode_array, int index) {
-    BPlusNodeModel model = mode_array[index];
-    BPlusNode *res = new BPlusNode(model.type_ == TInternal ? Data::kInternal : Data::kLeaf, 0);
-
-    for (int i = 0; i < model.child_size_; i++) {
-        Data data;
-        data.key_ = model.key_[i];
-        if (res->type_ == Data::kInternal) {
-            data.val_.child = BuildNodeRecursiveFromNodeModelArray(mode_array, model.values_[i]);
+BPlusNode *TreeStructureSerializer::ReadNode(FILE *fp, int order) {
+    int type, size;
+    fscanf(fp, "%d %d\n", &size, &type);
+    auto *node = new BPlusNode(type == TInternal ? Data::kInternal : Data::kLeaf, order);
+    node->list_.size_ = size;
+    for (int i = 0; i < node->list_.size_; i++) {
+        if (type == TInternal) {
+            int key;
+            if (fscanf(fp, "%d", &key) == -1) {
+                throw std::runtime_error("fscanf failed");
+            }
+            node->list_[i].key_ = key;
         } else {
-            data.val_.value = model.values_[i];
-        }
-
-        res->list_->InsertLast(data);
-    }
-    return res;
-}
-
-void TreeStructureSerializer::PrintNode(FILE *fp, const BPlusNode *node) {
-    // output node
-    int type = node->type_ == Data::kLeaf ? TLeaf : TInternal;
-    fprintf(fp, "%d %d %d\n", type, node->index, node->list_->size_);
-    for (auto now = node->list_->head_; now != nullptr; now = now->next_) {
-        fprintf(fp, "(%d,%d)%c", now->data_.key_,
-                node->type_ == Data::kInternal ? now->data_.val_.child->index : now->data_.val_.value,
-                " \n"[now->next_ == nullptr]);
-    }
-}
-
-void TreeStructureSerializer::PrintNodeRecursive(FILE *fp, BPlusNode *node) {
-    PrintNode(fp, node);
-    if (node->type_ == Data::kInternal) {
-        for (auto now = node->list_->head_; now != nullptr; now = now->next_) {
-            PrintNodeRecursive(fp, now->data_.val_.child);
+            int key, value;
+            fscanf(fp, i == node->list_.size_ - 1 ? "(%d,%d)\n" : "(%d,%d) ", &key, &value);
+            node->list_[i] = Data(key, value);
         }
     }
+    return node;
 }
 
 

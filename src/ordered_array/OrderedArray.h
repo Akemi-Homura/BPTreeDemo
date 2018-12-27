@@ -5,7 +5,6 @@
 #ifndef BPTDEMO_ORDEREDLINKLIST_H
 #define BPTDEMO_ORDEREDLINKLIST_H
 
-#include <compression.h>
 #include <stdexcept>
 #include <string.h>
 #include <string>
@@ -47,7 +46,7 @@ public:
 
     const int order_;
 
-    OrderedArray(int order);
+    explicit OrderedArray(int order);
 
     ~OrderedArray();
 
@@ -55,7 +54,7 @@ public:
 
     int Insert(OrderedArray *rhs);
 
-    int MergeAppend(OrderedArray *array);
+    int MergeAppend(OrderedArray *rhs);
 
     Data front();
 

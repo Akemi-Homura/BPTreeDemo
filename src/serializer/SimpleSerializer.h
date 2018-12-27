@@ -20,9 +20,9 @@ public:
 
 bool SimpleSerializer::Serialize(const BPlusTree *tree, const char *filename) {
     std::ofstream output_stream(filename);
-    for (auto *leaf_head = tree->GetLeftMostNode(); leaf_head != nullptr; leaf_head = leaf_head->right_sibling_) {
-        for (auto *entry = leaf_head->list_->head_; entry != nullptr; entry = entry->next_) {
-            output_stream << entry->data_.key_ << " " << entry->data_.val_.value << std::endl;
+    for (auto *leaf = tree->GetLeftMostNode(); leaf != nullptr; leaf = leaf->right_sibling_) {
+        for (int i=0;i<leaf->list_.size_;i++) {
+            output_stream << leaf->list_[i].key_ << " " << leaf->list_[i].val_.value << std::endl;
         }
     }
     output_stream.close();

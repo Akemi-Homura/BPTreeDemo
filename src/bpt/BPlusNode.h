@@ -21,7 +21,7 @@ public:
     ~BPlusNode();
 };
 
-BPlusNode::BPlusNode(Data::DataType type, int order) :list_(order){
+BPlusNode::BPlusNode(Data::DataType type, int order) :list_(order), order_(order){
     type_ = type;
     left_sibling_ = right_sibling_ =  nullptr;
 }
